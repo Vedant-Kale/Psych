@@ -43,4 +43,8 @@ jobs:
         run: npx wrangler deploy
       - name: Preview version
         if: env.CLOUDFLARE_API_TOKEN != '' && github.event_name == 'pull_request'
-        run: npx wrangler versions upload --message "PR #${{ github.event.number }} ${{ github.sha }}"
+        env:
+          # Passed via env, not inlined: an unquoted ` #` in YAML starts a comment, and inlining expressions into shell is an injection risk.
+          PR_NUMBER: ${{ github.event.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npx wrangler versions upload --message "PR ${PR_NUMBER} ${HEAD_SHA}"
