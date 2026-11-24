@@ -15,6 +15,11 @@ describe('collectInlineScriptHashes', () => {
     expect(collectInlineScriptHashes(`<script type="application/ld+json">${json}</script>`)).toEqual([sha(json)]);
   });
 
+  it('matches end tags with whitespace or different case, as browsers do', () => {
+    expect(collectInlineScriptHashes('<script>c()</script >')).toEqual([sha('c()')]);
+    expect(collectInlineScriptHashes('<SCRIPT>d()</SCRIPT\n>')).toEqual([sha('d()')]);
+  });
+
   it('does not treat data-src or a src word in content as a src attribute', () => {
     expect(collectInlineScriptHashes('<script data-src="x">b()</script>')).toEqual([sha('b()')]);
   });

@@ -8,7 +8,7 @@ export const MAX_HEADER_LINE = 2000;
 /** `'sha256-…'` for each inline `<script>` (no `src`). Script text is raw in HTML, so the bytes hashed are the bytes served. */
 export function collectInlineScriptHashes(html: string): string[] {
   const hashes: string[] = [];
-  for (const [, attrs = '', body = ''] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+  for (const [, attrs = '', body = ''] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
     if (/(?:^|\s)src\s*=/i.test(attrs)) continue;
     hashes.push(`'sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}'`);
   }
