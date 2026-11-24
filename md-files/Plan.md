@@ -30,6 +30,8 @@ M3–M8 get their own detailed plans (`md-files/plans/M<n>-*.md`) written at the
 - The Order never shows a claim without a citation to a supplied chunk ID.
 - Daily AI cap **100 calls** (worst case ≈ 84 Neurons/call × 100 = 8,400, below the 10,000-Neuron free quota; measured 17.9 avg; see Research §5).
 - Order input: **3–500 characters** after trimming.
+- Order text is kept **30 days** (decision #30), with no IP or account; the privacy page says so before anything is stored.
+- No guessing: the AI never infers traits; layers that hedge or make people/business claims their cited text doesn't state are dropped.
 - Rate limits per IP key: **5 orders per 10 minutes, 30 per UTC day**.
 - Retrieval top-k: **6** chunks.
 - CSP without `'unsafe-inline'` for scripts.
@@ -55,10 +57,12 @@ M3–M8 get their own detailed plans (`md-files/plans/M<n>-*.md`) written at the
 | **M0** | Risk spikes (throwaway) | Each spike's measure recorded in `md-files/spikes.md` with a go / adapt decision |
 | **M1** | Foundation | Repo, content system, graph and search builds, fast path, security headers, CI, preview deploy live |
 | **M2** | The Order backend | `/api/order` meets every Global Constraint; evals pass |
-| M3 | One Night | All five hours in 3D, clock, camera arc, quality tiers, reduced motion |
+| **M5.1** | Order v2: true answers | Stories and profile indexed; answer shapes; exits on every result; no dead ends |
+| **M5.2** | Order v2: learns, then launches | Signals, simulator, gap report, learned ranking, staging beta; AI back on only when launch gates pass |
+| M3 | One Night | All five hours in 3D, clock, camera arc, quality tiers, reduced motion; 21:00 as the first-person conversation scene with filmed loops (Design §10) |
 | M4 | Mind Palace | Ink world from `graph.json`, node pages linked, ink-to-real transition |
 | M5 | The Order front end | Pour animation, receipt (tailored one-page résumé), house menu, keyboard and screen-reader paths |
-| M6 | Likeness and The Reveal | Three captured poses integrated and graded; The Reveal |
+| M6 | Likeness and The Reveal | Frozen poses (18:00, dawn) and the 21:00 filmed loops integrated and graded; The Reveal |
 | M7 | Content and launch | Launch content, quality bar passed on real devices, public |
 | M8 | Post-launch | Admin page, inquiries, domain, weekly content |
 
@@ -313,3 +317,5 @@ type OrderResult =
 ## After M2
 
 Write `md-files/plans/M3-one-night.md` using the M0 results, then M4–M8 in order. Each detailed plan keeps this file's Global Constraints.
+
+Order v2 (M5.1, M5.2): `md-files/plans/order-v2.md`. It runs before M3; the AI stays off in production until its launch gates pass.
