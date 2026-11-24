@@ -167,6 +167,14 @@ describe('POST /api/order — grounded mix (AI mocked)', () => {
     expect(await spent()).toBe(1);
   });
 
+  it('AI_DAILY_CAP sets the cap per environment (staging and production share one free allowance)', async () => {
+    await reset();
+    const mock = ai({ layers: [goodLayer] });
+    const body = (await (await orderWith({ ORDER_ENABLED: 'true', AI: mock, AI_DAILY_CAP: '0' }, ask)).json()) as { kind: string; reason: string };
+    expect(body).toMatchObject({ kind: 'house-menu', reason: 'budget' });
+    expect(mock.run).not.toHaveBeenCalled();
+  });
+
   it('sends the configured model in JSON mode with the order only in the user message', async () => {
     const mock = ai({ layers: [goodLayer] });
     await orderWith({ ORDER_ENABLED: 'true', AI: mock, ORDER_MODEL: '@cf/test/model' }, ask);

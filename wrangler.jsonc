@@ -19,6 +19,30 @@
       "database_id": "9510a414-c416-4bdb-9f3f-fcbe25bfd6e0",
       "migrations_dir": "worker/migrations"
     }
-  ]
-  // Secrets TURNSTILE_SECRET and IP_SALT_SECRET via `wrangler secret put`
+  ],
+  // Secrets TURNSTILE_SECRET and IP_SALT_SECRET via `wrangler secret put` (add `--env staging` for staging).
+
+  // Staging: own Worker and D1, AI on, for the simulator and the private beta (md-files/plans/order-v2.md, Task 1).
+  // vars, ai, d1 and triggers are not inherited by environments, so each is restated.
+  // AI caps: production (default 100) + staging must stay ≤ 119 calls a day while both are on.
+  "env": {
+    "staging": {
+      "name": "psych-staging",
+      "vars": {
+        "ORDER_ENABLED": "true",
+        "ORDER_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct",
+        "AI_DAILY_CAP": "100"
+      },
+      "ai": { "binding": "AI" },
+      "triggers": { "crons": ["0 3 * * *"] },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "psych-staging",
+          "database_id": "657a7a16-b1d3-4b2a-ade1-943342ba0825",
+          "migrations_dir": "worker/migrations"
+        }
+      ]
+    }
+  }
 }

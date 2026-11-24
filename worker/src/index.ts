@@ -5,6 +5,8 @@ import { handleOrder } from './order/handler';
 export type Env = {
   ORDER_ENABLED: string;
   ORDER_MODEL: string;
+  /** Per-environment daily AI cap; production + staging must stay ≤ 119 (md-files/plans/order-v2.md). */
+  AI_DAILY_CAP?: string;
   TURNSTILE_SECRET: string;
   IP_SALT_SECRET: string;
   DB: D1Database;
