@@ -17,15 +17,16 @@ import { retrieve } from './retrieve';
 import { screenInput } from './screen';
 import { verifyTurnstile } from './turnstile';
 import type { OrderResult } from './types';
+import { logUnknown } from './unknown';
 
 // Validated by Zod at build time (scripts/build-search-index.ts reads only validated collections).
 const profile = profileJson as Profile;
 const menu = houseMenuJson as HouseMenu;
 const searchIndex = searchIndexJson as unknown as AsPlainObject;
 
-export const NOTHING_SUPPORTS = 'Nothing in my work supports that yet.';
+export const NOTHING_SUPPORTS = 'Nothing in my work supports that yet — noted for a future post.';
 
-/** Steps follow Architecture §4. Logging unanswered orders (step 10) lands in ticket 15. */
+/** Steps follow Architecture §4. */
 export async function handleOrder(c: Context<{ Bindings: Env }>) {
   // 1 parse
   const raw = await readBodyLimited(c.req.raw);
@@ -74,7 +75,7 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
 
   // 7 retrieve first: it's local and free, so an order nothing matches never spends budget
   const chunks = retrieve(searchIndex, text);
-  if (chunks.length === 0) return c.json<OrderResult>({ kind: 'none', message: NOTHING_SUPPORTS });
+  if (chunks.length === 0) return nothingSupports(c, text, now);
 
   // 6 daily AI budget
   if (!(await takeBudget(c.env.DB, now))) return c.json(houseMenu(menu, 'budget'));
@@ -82,6 +83,12 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
   // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
   const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks));
   const layers = enforceCitations(raw, chunks);
-  if (layers.length === 0) return c.json<OrderResult>({ kind: 'none', message: NOTHING_SUPPORTS });
+  if (layers.length === 0) return nothingSupports(c, text, now);
   return c.json<OrderResult>({ kind: 'mix', layers });
+}
+
+/** Step 10: an honest "no", and the order is kept (text only) so it can become a future post. */
+async function nothingSupports(c: Context<{ Bindings: Env }>, text: string, now: number) {
+  await logUnknown(c.env.DB, text, now);
+  return c.json<OrderResult>({ kind: 'none', message: NOTHING_SUPPORTS });
 }
