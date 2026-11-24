@@ -18,6 +18,7 @@ describe('collectInlineScriptHashes', () => {
   it('matches end tags with whitespace or different case, as browsers do', () => {
     expect(collectInlineScriptHashes('<script>c()</script >')).toEqual([sha('c()')]);
     expect(collectInlineScriptHashes('<SCRIPT>d()</SCRIPT\n>')).toEqual([sha('d()')]);
+    expect(collectInlineScriptHashes('<script>e()</script\t\n bar>')).toEqual([sha('e()')]);
   });
 
   it('does not treat data-src or a src word in content as a src attribute', () => {
