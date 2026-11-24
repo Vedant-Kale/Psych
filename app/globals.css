@@ -1,0 +1,20 @@
+:root {
+  --ink: #0b0a08;
+  --paper: #ece6dc;
+  --muted: #b8afa2;
+  --amber: #f2b45a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: 1.0625rem/1.65 system-ui, sans-serif;
+}
+a { color: var(--amber); }
+a:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.page { max-width: 42rem; margin: 0 auto; padding: 3rem 1.25rem; }
+.meta { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
+h1 { font-family: Georgia, serif; font-size: 2.25rem; line-height: 1.2; margin: 0.5rem 0; }
+.prose { margin-top: 2rem; }
