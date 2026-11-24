@@ -8,7 +8,6 @@ import type { Env } from '../index';
 import { readBodyLimited } from './body';
 import { enforceCitations } from './citations';
 import { answerFromProfile } from './facts';
-import { houseMenu } from './house-menu';
 import { checkRate, ipKey, takeBudget, utcDay } from './limits';
 import { callModel } from './model';
 import { buildMessages } from './prompt';
@@ -16,13 +15,15 @@ import { parseOrderRequest } from './request';
 import { retrieve } from './retrieve';
 import { screenInput } from './screen';
 import { verifyTurnstile } from './turnstile';
-import type { OrderResult } from './types';
+import type { HouseMenuReason, OrderResult } from './types';
 import { logUnknown } from './unknown';
 
 // Validated by Zod at build time (scripts/build-search-index.ts reads only validated collections).
 const profile = profileJson as Profile;
 const menu = houseMenuJson as HouseMenu;
 const searchIndex = searchIndexJson as unknown as AsPlainObject;
+
+const houseMenu = (reason: HouseMenuReason): OrderResult => ({ kind: 'house-menu', reason, menu });
 
 export const NOTHING_SUPPORTS = 'Nothing in my work supports that yet — noted for a future post.';
 
@@ -50,7 +51,7 @@ export async function handleOrder(c: Context<{ Bindings: Env }>) {
     return await serve(c, parsed.text, ip);
   } catch {
     // D1 or any later failure: the visitor still gets something useful, never a 500.
-    return c.json(houseMenu(menu, 'ai-error'));
+    return c.json(houseMenu('ai-error'));
   }
 }
 
@@ -58,9 +59,9 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
   const now = Date.now();
 
   // 3 rate limit. Without the salt an IP hash is guessable, so fail closed and store nothing.
-  if (!c.env.IP_SALT_SECRET) return c.json(houseMenu(menu, 'disabled'));
+  if (!c.env.IP_SALT_SECRET) return c.json(houseMenu('disabled'));
   const key = await ipKey(ip, c.env.IP_SALT_SECRET, utcDay(now));
-  if (!(await checkRate(c.env.DB, key, now))) return c.json(houseMenu(menu, 'rate-limit'), 429);
+  if (!(await checkRate(c.env.DB, key, now))) return c.json(houseMenu('rate-limit'), 429);
 
   // 4 screen
   const screened = screenInput(text);
@@ -71,14 +72,14 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
   if (fact) return c.json<OrderResult>({ kind: 'fact', ...fact });
 
   // kill switch
-  if (c.env.ORDER_ENABLED !== 'true') return c.json(houseMenu(menu, 'disabled'));
+  if (c.env.ORDER_ENABLED !== 'true') return c.json(houseMenu('disabled'));
 
   // 7 retrieve first: it's local and free, so an order nothing matches never spends budget
   const chunks = retrieve(searchIndex, text);
   if (chunks.length === 0) return nothingSupports(c, text, now);
 
   // 6 daily AI budget
-  if (!(await takeBudget(c.env.DB, now))) return c.json(houseMenu(menu, 'budget'));
+  if (!(await takeBudget(c.env.DB, now))) return c.json(houseMenu('budget'));
 
   // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
   const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks));

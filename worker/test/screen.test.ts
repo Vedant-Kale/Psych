@@ -17,19 +17,19 @@ const profile: Profile = {
 describe('parseOrderRequest', () => {
   it('rejects non-object body with 400', () => {
     for (const body of [null, 'text', 42, [], undefined]) {
-      expect(parseOrderRequest(body)).toEqual({ ok: false, status: 400 });
+      expect(parseOrderRequest(body)).toEqual({ ok: false });
     }
   });
 
   it('rejects a missing or non-string text', () => {
-    expect(parseOrderRequest({ turnstileToken: 't' })).toEqual({ ok: false, status: 400 });
-    expect(parseOrderRequest({ text: 5, turnstileToken: 't' })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ turnstileToken: 't' })).toEqual({ ok: false });
+    expect(parseOrderRequest({ text: 5, turnstileToken: 't' })).toEqual({ ok: false });
   });
 
   it('rejects missing token', () => {
-    expect(parseOrderRequest({ text: 'hello' })).toEqual({ ok: false, status: 400 });
-    expect(parseOrderRequest({ text: 'hello', turnstileToken: '' })).toEqual({ ok: false, status: 400 });
-    expect(parseOrderRequest({ text: 'hello', turnstileToken: 'x'.repeat(2049) })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ text: 'hello' })).toEqual({ ok: false });
+    expect(parseOrderRequest({ text: 'hello', turnstileToken: '' })).toEqual({ ok: false });
+    expect(parseOrderRequest({ text: 'hello', turnstileToken: 'x'.repeat(2049) })).toEqual({ ok: false });
   });
 
   it('keeps a 10,000-char text unchanged (length is screened later, not here)', () => {

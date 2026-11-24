@@ -101,16 +101,13 @@ export function buildGraph(posts: GraphPost[], projects: GraphProject[], seed = 
     .stop()
     .tick(TICKS);
 
-  return {
-    nodes: sim.map((n) => ({ ...(n as unknown as GraphNode), x: round(n.x as number), y: round(n.y as number), z: round(n.z as number) })).map(stripSim),
-    links,
-  };
+  return { nodes: sim.map(toNode), links };
 }
 
-/** d3 adds velocity and index fields; keep only the GraphNode shape. */
-function stripSim(n: GraphNode & Record<string, unknown>): GraphNode {
-  const { id, kind, type, domain, title, stage, weight, x, y, z } = n;
-  return { id, kind, ...(type && { type }), domain, title, ...(stage && { stage }), weight, x, y, z };
+/** d3 adds velocity and index fields; keep only the GraphNode shape, with rounded positions. */
+function toNode(n: Omit<GraphNode, 'x' | 'y' | 'z'> & { x?: number; y?: number; z?: number }): GraphNode {
+  const { id, kind, type, domain, title, stage, weight } = n;
+  return { id, kind, ...(type && { type }), domain, title, ...(stage && { stage }), weight, x: round(n.x), y: round(n.y), z: round(n.z) };
 }
 
 async function main() {
