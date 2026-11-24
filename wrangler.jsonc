@@ -9,6 +9,14 @@
     "not_found_handling": "404-page"
   },
   "observability": { "enabled": true },
-  "vars": { "ORDER_ENABLED": "false" }
-  // AI and D1 bindings land with tickets 13–14; secrets TURNSTILE_SECRET and IP_SALT_SECRET via `wrangler secret put`
+  "vars": { "ORDER_ENABLED": "false" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "psych",
+      "database_id": "9510a414-c416-4bdb-9f3f-fcbe25bfd6e0",
+      "migrations_dir": "worker/migrations"
+    }
+  ]
+  // AI binding lands with ticket 14; secrets TURNSTILE_SECRET and IP_SALT_SECRET via `wrangler secret put`
 }
