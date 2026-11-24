@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
     "test": "vitest run",
     "e2e": "playwright test",
-    "verify": "npm run lint && npm run test && npm run build && npm run typecheck && npm run e2e",
+    "verify": "npm run lint && npm run build && npm run test && npm run typecheck && npm run e2e",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
