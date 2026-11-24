@@ -52,8 +52,24 @@ What was investigated, the evidence, and each decision's status. Full reports ar
 - Awards for most 2025–26 references (only Bruno Simon 2019 and Igloo verified).
 - Licences of itomdev, Laxenaire, ProjectHub, Heckel's Moebius repo (no code copied until checked).
 - Spark frame rate on a named mid-range phone; mobile WebGPU stability.
-- Groq Free-plan limits; R2 free limits; Workers AI Neuron cost per answer for the chosen model.
+- Groq Free-plan limits; R2 free limits; **measured** Workers AI Neuron cost per answer (estimate in §5).
 - Free Worker script size (docs show 3 MB and 64 MiB).
 - Email Routing needing a Cloudflare-DNS domain (implied, not stated).
 - Scaniverse free plan and commercial use; Student Pack domain renewal prices.
 - Whether hash-based CSP covers every inline script Next.js static export emits.
+
+## 5. The Order model choice (2026-11-25)
+
+Checked against the live catalogue (`wrangler ai models list` / `schema`), not the docs: the JSON-mode docs page still lists `@cf/meta/llama-3.1-8b-instruct`, which is no longer in the catalogue.
+
+| Model | `messages` input | JSON mode (`response_format: json_schema`) | $/M in · out |
+|---|---|---|---|
+| **`@cf/meta/llama-4-scout-17b-16e-instruct`** (chosen) | yes | yes | 0.27 · 0.85 |
+| `@cf/openai/gpt-oss-20b` | no (Responses `input`) | yes | 0.20 · 0.30 |
+| `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | yes | yes | 0.293 · 2.253 |
+| `@cf/mistralai/mistral-small-3.1-24b-instruct` | yes | not in schema | 0.351 · 0.555 |
+
+Why Scout: standard `messages` + JSON schema + `seed`/`temperature`, mid cost, no hidden reasoning tokens. gpt-oss-20b is cheaper per token but uses a different input format and spends output tokens on reasoning; revisit if Scout's measured cost is too high.
+
+**Neuron estimate (a calculation, not a measurement):** at $0.011 per 1,000 Neurons, Scout costs ≈ 24.5 Neurons per 1k input and ≈ 77.3 per 1k output tokens. A typical order (fixed prompt + 6 chunks + order ≈ 1.8k in, ≤ 400 out with `max_tokens: 512`) ≈ **75 Neurons**. Cap = ⌊9,000 / 75⌋ = **120 calls/day** (`DAILY_AI_CAP`). Re-measure from real calls during the eval run (ticket 16) and retune.
+
