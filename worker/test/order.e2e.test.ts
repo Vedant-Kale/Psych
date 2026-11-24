@@ -1,5 +1,8 @@
-import { exports } from 'cloudflare:workers';
+import { createExecutionContext } from 'cloudflare:test';
+import { env, exports } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import worker from '../src/index';
+import { utcDay } from '../src/order/limits';
 
 // Every request passes Turnstile unless a test says otherwise; no test reaches the real siteverify.
 let turnstileSuccess = true;
@@ -10,9 +13,23 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 const url = 'https://psych.test/api/order';
-const post = (body: BodyInit, headers: Record<string, string> = { 'content-type': 'application/json' }) =>
-  exports.default.fetch(url, { method: 'POST', body, headers });
-const order = (text: unknown) => post(JSON.stringify({ text, turnstileToken: 'tok' }));
+let ipSeq = 0;
+/** A fresh visitor IP per request unless one is given, so tests don't share a rate-limit bucket. */
+const post = (body: BodyInit, ip = `198.51.100.${++ipSeq}`) =>
+  exports.default.fetch(url, { method: 'POST', body, headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip } });
+const order = (text: unknown, ip?: string) => post(JSON.stringify({ text, turnstileToken: 'tok' }), ip);
+
+/** Calls the Worker with overridden bindings (kill switch on, broken DB…). */
+const orderWith = (overrides: Record<string, unknown>, text: string) =>
+  worker.fetch(
+    new Request(url, {
+      method: 'POST',
+      body: JSON.stringify({ text, turnstileToken: 'tok' }),
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': `203.0.113.${++ipSeq}` },
+    }),
+    { ...env, ...overrides },
+    createExecutionContext(),
+  );
 
 describe('POST /api/order — bad input never yields a 500', () => {
   it('non-JSON body → 400', async () => {
@@ -76,3 +93,53 @@ describe('POST /api/order — answers', () => {
     expect((await post('nope')).headers.get('cache-control')).toBe('no-store');
   });
 });
+
+describe('POST /api/order — limits', () => {
+  it('rate-limited → 429 with the house menu', async () => {
+    const ip = '192.0.2.50';
+    const statuses = [];
+    for (let i = 0; i < 6; i++) statuses.push((await order('where does he study?', ip)).status);
+    expect(statuses).toEqual([200, 200, 200, 200, 200, 429]);
+    const body = (await (await order('where does he study?', ip)).json()) as { kind: string; reason: string };
+    expect(body).toMatchObject({ kind: 'house-menu', reason: 'rate-limit' });
+  });
+
+  it('a failed Turnstile does not use up the rate limit', async () => {
+    const ip = '192.0.2.60';
+    turnstileSuccess = false;
+    for (let i = 0; i < 6; i++) await order('where does he study?', ip);
+    turnstileSuccess = true;
+    expect((await order('where does he study?', ip)).status).toBe(200);
+  });
+
+  it('budget exhausted → house-menu budget (kill switch on)', async () => {
+    await env.DB.prepare('INSERT INTO ai_budget (day, calls) VALUES (?, 400) ON CONFLICT (day) DO UPDATE SET calls = 400')
+      .bind(utcDay(Date.now()))
+      .run();
+    const body = (await (await orderWith({ ORDER_ENABLED: 'true' }, 'build me an AI agent')).json()) as { kind: string; reason: string };
+    expect(body).toMatchObject({ kind: 'house-menu', reason: 'budget' });
+  });
+
+  it('facts never spend AI budget', async () => {
+    const before = await env.DB.prepare('SELECT COALESCE(SUM(calls), 0) AS n FROM ai_budget').first<{ n: number }>();
+    await orderWith({ ORDER_ENABLED: 'true' }, 'where does he study?');
+    const after = await env.DB.prepare('SELECT COALESCE(SUM(calls), 0) AS n FROM ai_budget').first<{ n: number }>();
+    expect(after?.n).toBe(before?.n);
+  });
+
+  it('database failure → house menu, never a 500', async () => {
+    const broken = { prepare: () => { throw new Error('D1 down'); }, batch: () => Promise.reject(new Error('D1 down')) };
+    const res = await orderWith({ DB: broken }, 'where does he study?');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ kind: 'house-menu', reason: 'ai-error' });
+  });
+
+  it('missing IP_SALT_SECRET → house menu, nothing stored', async () => {
+    const before = await env.DB.prepare('SELECT COUNT(*) AS n FROM rate_limits').first<{ n: number }>();
+    const body = (await (await orderWith({ IP_SALT_SECRET: '' }, 'where does he study?')).json()) as { kind: string };
+    expect(body.kind).toBe('house-menu');
+    const after = await env.DB.prepare('SELECT COUNT(*) AS n FROM rate_limits').first<{ n: number }>();
+    expect(after?.n).toBe(before?.n);
+  });
+});
+
