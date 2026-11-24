@@ -35,7 +35,7 @@ flowchart LR
 | **8. Preview** | Each PR gets its own Cloudflare preview URL | Review the running site, not just code. Catches visual and real-device problems before users see them |
 | **9. Review** | Read the diff against the ticket; a Claude `/code-review` pass plus owner read-through; resolve every comment | A second pair of eyes finds what the author can't see. Solo devs use review tools to get that second view |
 | **10. Squash merge** | One commit per PR on `main`, titled like the PR | `main` history reads as a list of finished features; any feature can be reverted in one step |
-| **11. Deploy** | Push to `main` triggers verify → `wrangler deploy`; branch deleted | Production always equals `main`. No manual deploys, so no "works on my machine" releases |
+| **11. Deploy** | Push to `main` triggers verify → `wrangler deploy` (production), then `wrangler deploy --env staging` (staging: own Worker and D1, AI on, for the simulator and the private beta); branch deleted | Production always equals `main`. No manual deploys, so no "works on my machine" releases |
 | **12. Release** | Tag milestones (`v0.1.0` at M1, …); evals run on tags | Named points you can roll back to; heavy checks run when they matter |
 
 ## Guard rails on `main` (branch protection)

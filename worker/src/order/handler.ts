@@ -8,7 +8,7 @@ import type { Env } from '../index';
 import { readBodyLimited } from './body';
 import { enforceCitations } from './citations';
 import { answerFromProfile } from './facts';
-import { checkRate, ipKey, takeBudget, utcDay } from './limits';
+import { checkRate, DAILY_AI_CAP, ipKey, takeBudget, utcDay } from './limits';
 import { callModel } from './model';
 import { buildMessages } from './prompt';
 import { parseOrderRequest } from './request';
@@ -79,7 +79,8 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
   if (chunks.length === 0) return nothingSupports(c, text, now);
 
   // 6 daily AI budget
-  if (!(await takeBudget(c.env.DB, now))) return c.json(houseMenu('budget'));
+  const cap = Number(c.env.AI_DAILY_CAP ?? DAILY_AI_CAP);
+  if (!(await takeBudget(c.env.DB, now, Number.isInteger(cap) && cap >= 0 ? cap : DAILY_AI_CAP))) return c.json(houseMenu('budget'));
 
   // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
   const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks));
