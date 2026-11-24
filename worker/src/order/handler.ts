@@ -1,13 +1,19 @@
+import type { AsPlainObject } from 'minisearch';
 import type { Context } from 'hono';
 import type { HouseMenu, Profile } from '../../../lib/content/schema';
 import houseMenuJson from '../../generated/house-menu.json';
 import profileJson from '../../generated/profile.json';
+import searchIndexJson from '../../generated/search-index.json';
 import type { Env } from '../index';
 import { readBodyLimited } from './body';
+import { enforceCitations } from './citations';
 import { answerFromProfile } from './facts';
 import { houseMenu } from './house-menu';
 import { checkRate, ipKey, takeBudget, utcDay } from './limits';
+import { callModel } from './model';
+import { buildMessages } from './prompt';
 import { parseOrderRequest } from './request';
+import { retrieve } from './retrieve';
 import { screenInput } from './screen';
 import { verifyTurnstile } from './turnstile';
 import type { OrderResult } from './types';
@@ -15,8 +21,11 @@ import type { OrderResult } from './types';
 // Validated by Zod at build time (scripts/build-search-index.ts reads only validated collections).
 const profile = profileJson as Profile;
 const menu = houseMenuJson as HouseMenu;
+const searchIndex = searchIndexJson as unknown as AsPlainObject;
 
-/** Steps follow Architecture §4. The AI path (7–10) lands in tickets 14–15. */
+export const NOTHING_SUPPORTS = 'Nothing in my work supports that yet.';
+
+/** Steps follow Architecture §4. Logging unanswered orders (step 10) lands in ticket 15. */
 export async function handleOrder(c: Context<{ Bindings: Env }>) {
   // 1 parse
   const raw = await readBodyLimited(c.req.raw);
@@ -63,9 +72,16 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
   // kill switch
   if (c.env.ORDER_ENABLED !== 'true') return c.json(houseMenu(menu, 'disabled'));
 
+  // 7 retrieve first: it's local and free, so an order nothing matches never spends budget
+  const chunks = retrieve(searchIndex, text);
+  if (chunks.length === 0) return c.json<OrderResult>({ kind: 'none', message: NOTHING_SUPPORTS });
+
   // 6 daily AI budget
   if (!(await takeBudget(c.env.DB, now))) return c.json(houseMenu(menu, 'budget'));
 
-  // shortcut: the model call (ticket 14) replaces this; production keeps ORDER_ENABLED=false until then.
-  return c.json(houseMenu(menu, 'disabled'));
+  // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
+  const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks));
+  const layers = enforceCitations(raw, chunks);
+  if (layers.length === 0) return c.json<OrderResult>({ kind: 'none', message: NOTHING_SUPPORTS });
+  return c.json<OrderResult>({ kind: 'mix', layers });
 }

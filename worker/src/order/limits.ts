@@ -1,7 +1,8 @@
 export const BURST_LIMIT = 5;
 export const BURST_WINDOW_MS = 10 * 60_000;
 export const DAILY_LIMIT = 30;
-export const DAILY_AI_CAP = 400;
+// ~75 Neurons/call (estimate, see md-files/Research.md) × 120 = 9,000, under the 10,000/day free allowance.
+export const DAILY_AI_CAP = 120;
 
 export const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
