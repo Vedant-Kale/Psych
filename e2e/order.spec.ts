@@ -178,3 +178,10 @@ test.describe('pour', () => {
     await expect(page.locator('.pour')).toBeHidden();
   });
 });
+
+test('the receipt names the same site as the sitemap', async ({ page, request }) => {
+  const origin = new URL((await (await request.get('/sitemap.xml')).text()).match(/<loc>([^<]+)<\/loc>/)![1]!).host;
+  await api(page, 200, { kind: 'mix', layers: [{ skill: 's', evidenceIds: ['expense-track#0'], rationale: 'r' }] });
+  await order(page);
+  await expect(page.getByRole('region', { name: 'Receipt' }).getByText(/^Mixed /)).toContainText(`${origin}/order/`);
+});
