@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PSYCH spikes</title>
+    <style>
+      html, body, #root { margin: 0; height: 100%; background: #0b0806; color: #f3e6d2; font: 14px/1.4 system-ui, sans-serif; }
+      a { color: #ffb45c; }
+      #hud { position: fixed; top: 8px; left: 8px; padding: 6px 8px; background: #000a; border-radius: 6px; font: 12px/1.4 ui-monospace, monospace; white-space: pre; pointer-events: none; z-index: 10; }
+      .bar { position: fixed; bottom: 12px; left: 12px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 10; }
+      .bar button, .bar label { background: #1d1510; color: #f3e6d2; border: 1px solid #5a4230; border-radius: 6px; padding: 8px 12px; font: inherit; }
+      .fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 300ms; z-index: 5; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="hud"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
