@@ -2,22 +2,24 @@
 
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
+import type { Profile } from '@/lib/content/schema';
 import { postOrder, type OrderResponse } from '@/lib/order/client';
 import { TURNSTILE_SITE_KEY } from '@/lib/site';
 import { errorCopy, houseMenuCopy, refusalCopy, resultHeading, turnstileBlocked } from './copy';
+import { Receipt } from './Receipt';
+import { SourceLinks, type Sources } from './SourceLinks';
 import { Turnstile } from './Turnstile';
-
-export type Sources = Record<string, { title: string; href: string }>;
 
 const MAX = 500;
 
-export function Order({ sources }: { sources: Sources }) {
+export function Order({ sources, profile }: { sources: Sources; profile: Profile }) {
   const [text, setText] = useState('');
   const [token, setToken] = useState('');
   const [checkFailed, setCheckFailed] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<OrderResponse | null>(null);
+  const [ordered, setOrdered] = useState(''); // the text as sent; the box may change afterwards
   const inFlight = useRef(false); // state updates are async; this stops a double click sending twice
   const heading = useRef<HTMLHeadingElement>(null);
   const ids = { hint: useId(), count: useId(), status: useId() };
@@ -30,7 +32,9 @@ export function Order({ sources }: { sources: Sources }) {
     if (inFlight.current || !token) return;
     inFlight.current = true;
     setPending(true);
-    const r = await postOrder(text.trim(), token);
+    const sent = text.trim();
+    const r = await postOrder(sent, token);
+    setOrdered(sent);
     setToken('');
     setResetKey((k) => k + 1);
     setResult(r);
@@ -69,11 +73,15 @@ export function Order({ sources }: { sources: Sources }) {
         <p id={ids.count} className="meta order-count">
           {text.length} of {MAX} characters
         </p>
-        <Turnstile siteKey={TURNSTILE_SITE_KEY} resetKey={resetKey} onToken={(t) => {
+        <Turnstile
+          siteKey={TURNSTILE_SITE_KEY}
+          resetKey={resetKey}
+          onToken={(t) => {
             setToken(t);
             if (t) setCheckFailed(false); // the widget can recover after an error-callback
           }}
-          onError={() => setCheckFailed(true)} />
+          onError={() => setCheckFailed(true)}
+        />
         {checkFailed && (
           <p className="order-note" role="alert">
             {turnstileBlocked} Everything is also on the <Link href="/facts/">facts page</Link>.
@@ -97,7 +105,7 @@ export function Order({ sources }: { sources: Sources }) {
             <h2 ref={heading} tabIndex={-1}>
               {resultHeading[result.kind]}
             </h2>
-            <Result result={result} sources={sources} onRetry={() => void submit()} canRetry={!!token && !pending} />
+            <Result result={result} sources={sources} profile={profile} ordered={ordered} onRetry={() => void submit()} canRetry={!!token && !pending} />
           </>
         )}
       </section>
@@ -105,20 +113,24 @@ export function Order({ sources }: { sources: Sources }) {
   );
 }
 
-function Result({ result, sources, onRetry, canRetry }: { result: OrderResponse; sources: Sources; onRetry: () => void; canRetry: boolean }) {
+function Result({
+  result,
+  sources,
+  profile,
+  ordered,
+  onRetry,
+  canRetry,
+}: {
+  result: OrderResponse;
+  sources: Sources;
+  profile: Profile;
+  ordered: string;
+  onRetry: () => void;
+  canRetry: boolean;
+}) {
   switch (result.kind) {
     case 'mix':
-      return (
-        <ol className="order-layers">
-          {result.layers.map((l, i) => (
-            <li key={i}>
-              <strong>{l.skill}</strong>
-              <p>{l.rationale}</p>
-              <SourceLinks ids={l.evidenceIds} sources={sources} />
-            </li>
-          ))}
-        </ol>
-      );
+      return <Receipt order={ordered} layers={result.layers} sources={sources} profile={profile} />;
     case 'fact':
       return (
         <>
@@ -155,23 +167,4 @@ function Result({ result, sources, onRetry, canRetry }: { result: OrderResponse;
         </>
       );
   }
-}
-
-/** `slug#n` evidence ids → one link per source page; an unknown slug stays plain text. */
-function SourceLinks({ ids, sources }: { ids: string[]; sources: Sources }) {
-  const slugs = [...new Set(ids.map((id) => id.split('#')[0]!))];
-  return (
-    <p className="meta">
-      Proof:{' '}
-      {slugs.map((slug, i) => {
-        const s = sources[slug];
-        return (
-          <span key={slug}>
-            {i > 0 && ', '}
-            {s ? <Link href={s.href}>{s.title}</Link> : slug}
-          </span>
-        );
-      })}
-    </p>
-  );
 }

@@ -79,3 +79,25 @@ h2 { font-family: Georgia, serif; font-size: 1.4rem; margin: 2.5rem 0 0.75rem; }
 .order-layers { list-style: none; padding: 0; margin: 1rem 0 0; }
 .order-layers > li { padding: 0.25rem 0 0.25rem 1rem; margin-bottom: 1.25rem; border-left: 3px solid var(--amber); }
 .order-layers p { margin: 0.25rem 0; }
+
+/* Receipt: a paper slip on screen; on paper, the only thing printed. */
+.receipt { margin-top: 2rem; padding: 1.5rem; background: var(--paper); color: #1d1812; border-radius: 2px; }
+.receipt h3 { margin: 0 0 1rem; font: 1rem/1.4 Georgia, serif; color: #5c5348; }
+.receipt a { color: #6b3f0f; }
+.receipt .meta { color: #5c5348; }
+.receipt-name { margin: 0; font: 1.6rem/1.2 Georgia, serif; }
+.receipt-ordered { margin: 1.25rem 0 0.5rem; }
+.receipt-layers { list-style: none; padding: 0; margin: 0 0 1rem; }
+.receipt-layers > li { padding: 0.75rem 0; border-top: 1px dashed #b9ad9a; }
+.receipt-layers p { margin: 0.25rem 0; }
+.receipt .order-button:focus-visible { outline-color: #1d1812; }
+.print-only { display: none; }
+@media print {
+  @page { size: A4; margin: 18mm; }
+  body, .order { background: #fff; color: #000; }
+  .order > :not(.order-result), .order-result > :not(.receipt), .receipt-print { display: none !important; }
+  .page { padding: 0; max-width: none; }
+  .receipt { margin: 0; padding: 0; background: none; color: #000; }
+  .receipt a { color: #000; }
+  .print-only { display: inline; }
+}
