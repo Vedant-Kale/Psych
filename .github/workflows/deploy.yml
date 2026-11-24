@@ -38,6 +38,9 @@ jobs:
         run: echo "::error::Set the repo variable SITE_URL (canonical site origin) before deploying" && exit 1
       - if: env.CLOUDFLARE_API_TOKEN != ''
         run: npm ci && npm run build
+      - name: Apply D1 migrations
+        if: env.CLOUDFLARE_API_TOKEN != '' && github.event_name == 'push'
+        run: npx wrangler d1 migrations apply psych --remote
       - name: Production deploy
         if: env.CLOUDFLARE_API_TOKEN != '' && github.event_name == 'push'
         run: npx wrangler deploy
