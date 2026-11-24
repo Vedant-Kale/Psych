@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "psych",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-11-24",
+  "assets": {
+    "directory": "out",
+    "run_worker_first": ["/api/*"],
+    "not_found_handling": "404-page"
+  },
+  "observability": { "enabled": true },
+  "vars": { "ORDER_ENABLED": "false" }
+  // AI and D1 bindings land with tickets 13–14; secrets TURNSTILE_SECRET and IP_SALT_SECRET via `wrangler secret put`
+}
