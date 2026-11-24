@@ -107,3 +107,43 @@ test('order page has no axe violations with a result showing', async ({ page }) 
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
   expect(violations).toEqual([]);
 });
+
+test.describe('receipt', () => {
+  const mix = {
+    kind: 'mix',
+    layers: [
+      { skill: 'Secure multi-user data', evidenceIds: ['expense-track#0'], rationale: 'Forced row-level security.' },
+      { skill: 'Reading a room', evidenceIds: ['ghost-slug#0'], rationale: 'Years behind the bar.' },
+    ],
+  };
+
+  test('a mix comes with a receipt: who, what was ordered, and every layer with its proof', async ({ page }) => {
+    await api(page, 200, mix);
+    await order(page, 'someone who builds safe agents');
+    const receipt = page.getByRole('region', { name: 'Receipt' });
+    await expect(receipt.getByText('Vedant Kale', { exact: true })).toBeVisible();
+    await expect(receipt.getByText('someone who builds safe agents')).toBeVisible();
+    for (const l of mix.layers) await expect(receipt.getByText(l.skill)).toBeVisible();
+    await expect(receipt.getByRole('link', { name: 'expense-track-agent' })).toBeVisible();
+    const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+    expect(violations).toEqual([]);
+  });
+
+  test('a source the site no longer has shows as plain text, not a broken link', async ({ page }) => {
+    await api(page, 200, mix);
+    await order(page);
+    const receipt = page.getByRole('region', { name: 'Receipt' });
+    await expect(receipt.getByText('ghost-slug')).toBeVisible();
+    await expect(receipt.getByRole('link', { name: 'ghost-slug' })).toHaveCount(0);
+  });
+
+  test('printing shows only the receipt', async ({ page }) => {
+    await api(page, 200, mix);
+    await order(page);
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.getByRole('region', { name: 'Receipt' })).toBeVisible();
+    await expect(page.getByLabel('Your order')).toBeHidden();
+    await expect(page.getByRole('heading', { level: 1, name: 'The Order' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Print or save as PDF' })).toBeHidden();
+  });
+});

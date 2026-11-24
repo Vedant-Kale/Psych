@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { Order, type Sources } from '@/components/order/Order';
-import { allPosts, allProjects } from '@/lib/content';
+import { Order } from '@/components/order/Order';
+import type { Sources } from '@/components/order/SourceLinks';
+import { allPosts, allProjects, profile } from '@/lib/content';
 
 export const metadata: Metadata = {
   title: 'The Order',
@@ -18,7 +19,7 @@ export default function OrderPage() {
       <p className="lead">
         Tell me the engineer you need. I&apos;ll mix it from work I&apos;ve actually done, and show where each part comes from.
       </p>
-      <Order sources={sources} />
+      <Order sources={sources} profile={profile()} />
     </main>
   );
 }
