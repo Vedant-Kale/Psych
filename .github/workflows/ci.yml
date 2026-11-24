@@ -31,6 +31,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run verify
+        # A non-localhost origin, so tests catch any code that ignores SITE_URL.
+        env:
+          SITE_URL: https://psych.example.test
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
