@@ -13,7 +13,13 @@ export default defineConfig({
         },
       },
       {
-        plugins: [cloudflareTest({ wrangler: { configPath: './wrangler.jsonc' } })],
+        plugins: [
+          cloudflareTest({
+            wrangler: { configPath: './wrangler.jsonc' },
+            // Cloudflare's published always-pass test secret; never a real one.
+            miniflare: { bindings: { TURNSTILE_SECRET: '1x0000000000000000000000000000000AA' } },
+          }),
+        ],
         test: { name: 'worker', include: ['worker/test/**/*.test.ts'] },
       },
     ],
