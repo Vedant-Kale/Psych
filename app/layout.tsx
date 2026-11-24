@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'PSYCH — Vedant Kale',
+  title: { default: 'PSYCH — Vedant Kale', template: '%s — PSYCH — Vedant Kale' },
   description: 'An immersive portfolio by Vedant Kale, AI engineer.',
 };
 

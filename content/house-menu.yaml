@@ -1,0 +1,4 @@
+items:
+  - skill: Keeping each user's data private at the database layer
+    evidence: [expense-track]
+    rationale: expense-track-agent forces Postgres row-level security on every table, so one user's query can't return another user's rows.

@@ -1,3 +1,4 @@
+import { withContentCollections } from '@content-collections/next';
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
@@ -6,4 +7,4 @@ const config: NextConfig = {
   trailingSlash: true,
 };
 
-export default config;
+export default withContentCollections(config);

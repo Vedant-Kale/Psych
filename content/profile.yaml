@@ -1,0 +1,17 @@
+name: Vedant Kale
+headline: Master of Artificial Intelligence student building AI end to end
+location: Melbourne, Australia
+education:
+  - degree: Master of Artificial Intelligence
+    institution: RMIT University
+    status: in progress
+roles:
+  - title: Bartending and food & beverage service
+    kind: hospitality
+  - title: Ushering and ticketing at Melbourne venues and stadiums
+    kind: events
+skills:
+  - name: Row-level security in Postgres
+    evidence: [expense-track]
+contact:
+  github: https://github.com/Vedant-Kale
