@@ -1,0 +1,51 @@
+name: Evals
+
+# Real Workers AI calls cost Neurons, so: weekly, on release tags, on demand, and only on PRs that change the evals.
+on:
+  schedule:
+    - cron: '0 21 * * 0'
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+  pull_request:
+    paths: ['evals/**', '.github/workflows/evals.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals
+  cancel-in-progress: false
+
+jobs:
+  evals:
+    name: evals
+    runs-on: ubuntu-latest
+    # Fork PRs never get secrets.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx wrangler d1 migrations apply psych --local
+      # Local Worker with real Workers AI. Turnstile uses Cloudflare's always-pass test secret, so no public
+      # test endpoint exists; the salt is a throwaway for this local run.
+      - name: Start local Worker
+        run: |
+          npx wrangler dev --port 8799 \
+            --var ORDER_ENABLED:true \
+            --var TURNSTILE_SECRET:1x0000000000000000000000000000000AA \
+            --var IP_SALT_SECRET:ci-eval-salt > wrangler-dev.log 2>&1 &
+          curl -sf --retry 60 --retry-connrefused --retry-delay 1 http://localhost:8799/api/health
+      - run: npm run evals
+      - name: Neuron usage this run
+        if: always()
+        run: |
+          grep -o '"neurons":[0-9.]*' wrangler-dev.log | awk -F: '{n+=$2; k++} END {printf "model calls: %d, neurons: %.1f\n", k, n}'

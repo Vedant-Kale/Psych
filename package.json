@@ -14,7 +14,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "verify": "npm run lint && npm run build && npm run test && npm run typecheck && npm run e2e",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "evals": "node evals/run.ts"
   },
   "dependencies": {
     "hono": "4.13.21",
