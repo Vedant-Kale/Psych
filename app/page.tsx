@@ -8,6 +8,9 @@ export default function Home() {
       </Link>
       <h1>PSYCH</h1>
       <p>One night in Melbourne is being built. The facts are ready now.</p>
+      <p>
+        Or <Link href="/order/">order an engineer</Link>: describe what you need and get the matching work, with sources.
+      </p>
     </main>
   );
 }

@@ -22,6 +22,9 @@ export default function FactsPage() {
       <h1>{me.name}</h1>
       <p className="lead">{me.headline}</p>
       <p className="meta">{me.location}</p>
+      <p>
+        <Link href="/order/">Order an engineer</Link> to see the work that matches what you need.
+      </p>
 
       <h2>Projects</h2>
       <ul className="list">
