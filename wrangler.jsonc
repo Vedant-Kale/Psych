@@ -9,7 +9,7 @@
     "not_found_handling": "404-page"
   },
   "observability": { "enabled": true },
-  "vars": { "ORDER_ENABLED": "true", "ORDER_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct" },
+  "vars": { "ORDER_ENABLED": "false", "ORDER_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct" },
   "ai": { "binding": "AI" },
   "triggers": { "crons": ["0 3 * * *"] },
   "d1_databases": [
