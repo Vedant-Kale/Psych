@@ -6,6 +6,7 @@ import type { Profile } from '@/lib/content/schema';
 import { postOrder, type OrderResponse } from '@/lib/order/client';
 import { TURNSTILE_SITE_KEY } from '@/lib/site';
 import { errorCopy, houseMenuCopy, refusalCopy, resultHeading, turnstileBlocked } from './copy';
+import { Pour } from './Pour';
 import { Receipt } from './Receipt';
 import { SourceLinks, type Sources } from './SourceLinks';
 import { Turnstile } from './Turnstile';
@@ -130,7 +131,12 @@ function Result({
 }) {
   switch (result.kind) {
     case 'mix':
-      return <Receipt order={ordered} layers={result.layers} sources={sources} profile={profile} />;
+      return (
+        <>
+          <Pour layers={result.layers} />
+          <Receipt order={ordered} layers={result.layers} sources={sources} profile={profile} />
+        </>
+      );
     case 'fact':
       return (
         <>

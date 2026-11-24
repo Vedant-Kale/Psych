@@ -147,3 +147,34 @@ test.describe('receipt', () => {
     await expect(page.getByRole('button', { name: 'Print or save as PDF' })).toBeHidden();
   });
 });
+
+test.describe('pour', () => {
+  const three = {
+    kind: 'mix',
+    layers: ['Agents', 'Security', 'Data'].map((skill) => ({ skill, evidenceIds: ['expense-track#0'], rationale: 'r' })),
+  };
+
+  test('pours one band per layer, decorative only', async ({ page }) => {
+    await api(page, 200, three);
+    await order(page);
+    const pour = page.locator('.pour');
+    await expect(pour).toHaveAttribute('aria-hidden', 'true');
+    await expect(pour.locator('.pour-band')).toHaveCount(3);
+  });
+
+  test('with reduced motion the bands are simply there, no animation', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await api(page, 200, three);
+    await order(page);
+    await expect(page.locator('.pour-band')).toHaveCount(3);
+    const names = await page.locator('.pour-band').evaluateAll((els) => els.map((e) => getComputedStyle(e).animationName));
+    expect(names).toEqual(['none', 'none', 'none']);
+  });
+
+  test('is not printed', async ({ page }) => {
+    await api(page, 200, three);
+    await order(page);
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('.pour')).toBeHidden();
+  });
+});
