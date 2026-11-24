@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { HouseMenu, Profile } from '../../lib/content/schema';
+import type { Profile } from '../../lib/content/schema';
 import { answerFromProfile } from '../src/order/facts';
-import { houseMenu } from '../src/order/house-menu';
 import { parseOrderRequest } from '../src/order/request';
 import { screenInput } from '../src/order/screen';
 
@@ -95,11 +94,14 @@ describe('answerFromProfile', () => {
   it('"build me an AI agent" → null (goes to AI)', () => {
     expect(answerFromProfile('build me an AI agent', profile)).toBeNull();
   });
-});
 
-describe('houseMenu', () => {
-  it('wraps the menu with the reason', () => {
-    const menu: HouseMenu = { items: [{ skill: 's', evidence: ['x'], rationale: 'r' }] };
-    expect(houseMenu(menu, 'disabled')).toEqual({ kind: 'house-menu', reason: 'disabled', menu });
+  it.each([
+    'I need an engineer to build email automation agents',
+    'Someone with strong GitHub Actions CI skills',
+    'Of course I want a RAG builder',
+    'An ML engineer for an education-tech startup',
+    'Agent with a high degree of autonomy',
+  ])('order that only mentions a keyword goes to AI: %s', (order) => {
+    expect(answerFromProfile(order, profile)).toBeNull();
   });
 });

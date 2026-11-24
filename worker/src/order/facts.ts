@@ -29,8 +29,12 @@ const rules: { match: RegExp; answer: (p: Profile) => string }[] = [
   },
 ];
 
+// Keywords alone ("email agents", "high degree of autonomy") are ordinary orders; a fact question names the owner.
+const aboutOwner = /\b(he|his|him|vedant|your)\b|\bwho are you\b/i;
+
 /** Deterministic answers to questions about the owner: no model, always cites the profile. */
 export function answerFromProfile(text: string, profile: Profile): Fact | null {
+  if (!aboutOwner.test(text)) return null;
   const rule = rules.find((r) => r.match.test(text));
   return rule ? { answer: rule.answer(profile), sourceIds: ['profile'] } : null;
 }
