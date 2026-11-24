@@ -71,3 +71,13 @@ test('robots allows indexing and points to the sitemap', async ({ request }) => 
   expect(txt).not.toMatch(/Disallow: \/\s*$/m);
   expect(txt).toMatch(/Sitemap: .+\/sitemap\.xml/);
 });
+
+test('graph.json is served with every post and project as a node', async ({ request }) => {
+  const res = await request.get('/graph.json');
+  expect(res.status()).toBe(200);
+  const graph = (await res.json()) as { nodes: { id: string }[]; links: unknown[] };
+  const ids = graph.nodes.map((n) => n.id);
+  for (const p of projects) expect(ids).toContain(p.slug);
+  expect(ids).toContain('why-bars-light-amber');
+  expect(graph.links.length).toBeGreaterThan(0);
+});
