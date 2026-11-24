@@ -13,7 +13,8 @@ Rules:
 - State only what the evidence says directly. Never infer traits, soft skills or attitudes (leadership, business sense, openness to feedback, customer skills) from technical work.
 - Never hedge: no "could", "may", "might", "suggests", "indicates" or "implies".
 - Every layer must cite at least one evidence id, copied exactly, that directly supports it.
-- If no evidence directly shows what the order asks for, return {"layers": []}. An honest empty answer is better than a stretch.
+- Each layer is one skill the evidence shows that is relevant to the order; a layer doesn't have to cover the whole order.
+- If no evidence is relevant, return {"layers": []}. An honest empty answer is better than a stretch.
 - At most 5 layers. Each rationale is one plain sentence.
 - Reply with JSON only: {"layers":[{"skill":string,"evidence_ids":[string],"rationale":string}]}`;
 
