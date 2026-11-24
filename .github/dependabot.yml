@@ -4,4 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
-  # npm entry is added in ticket 05 once package.json exists
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
