@@ -82,7 +82,7 @@ describe('POST /api/order — answers', () => {
   });
 
   it('kill switch off → house-menu disabled with the curated menu', async () => {
-    const body = (await (await order('build me an AI agent')).json()) as { kind: string; reason: string; menu: { items: unknown[] } };
+    const body = (await (await orderWith({ ORDER_ENABLED: 'false' }, 'build me an AI agent')).json()) as { kind: string; reason: string; menu: { items: unknown[] } };
     expect(body.kind).toBe('house-menu');
     expect(body.reason).toBe('disabled');
     expect(body.menu.items.length).toBeGreaterThan(0);
