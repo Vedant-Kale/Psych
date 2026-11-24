@@ -23,13 +23,19 @@ describe('parseOrderRequest', () => {
   });
 
   it('rejects a missing or non-string text', () => {
-    expect(parseOrderRequest({})).toEqual({ ok: false, status: 400 });
-    expect(parseOrderRequest({ text: 5 })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ turnstileToken: 't' })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ text: 5, turnstileToken: 't' })).toEqual({ ok: false, status: 400 });
+  });
+
+  it('rejects missing token', () => {
+    expect(parseOrderRequest({ text: 'hello' })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ text: 'hello', turnstileToken: '' })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ text: 'hello', turnstileToken: 'x'.repeat(2049) })).toEqual({ ok: false, status: 400 });
   });
 
   it('keeps a 10,000-char text unchanged (length is screened later, not here)', () => {
     const text = 'a'.repeat(10_000);
-    expect(parseOrderRequest({ text })).toEqual({ ok: true, text });
+    expect(parseOrderRequest({ text, turnstileToken: 't' })).toEqual({ ok: true, text, turnstileToken: 't' });
   });
 });
 

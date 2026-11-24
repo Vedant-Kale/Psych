@@ -8,13 +8,14 @@ import { answerFromProfile } from './facts';
 import { houseMenu } from './house-menu';
 import { parseOrderRequest } from './request';
 import { screenInput } from './screen';
+import { verifyTurnstile } from './turnstile';
 import type { OrderResult } from './types';
 
 // Validated by Zod at build time (scripts/build-search-index.ts reads only validated collections).
 const profile = profileJson as Profile;
 const menu = houseMenuJson as HouseMenu;
 
-/** Steps follow Architecture §4. Turnstile (2), rate limit (3) and the AI path (6–10) land in tickets 12–15. */
+/** Steps follow Architecture §4. Rate limit (3) and the AI path (6–10) land in tickets 13–15. */
 export async function handleOrder(c: Context<{ Bindings: Env }>) {
   const raw = await readBodyLimited(c.req.raw);
   if (raw === null) return c.json({ error: 'body too large' }, 400);
@@ -26,7 +27,12 @@ export async function handleOrder(c: Context<{ Bindings: Env }>) {
     return c.json({ error: 'invalid JSON' }, 400);
   }
   const parsed = parseOrderRequest(body);
-  if (!parsed.ok) return c.json({ error: 'expected {"text": string}' }, 400);
+  if (!parsed.ok) return c.json({ error: 'expected {"text": string, "turnstileToken": string}' }, 400);
+
+  const ip = c.req.header('cf-connecting-ip') ?? '';
+  if (!(await verifyTurnstile(parsed.turnstileToken, c.env.TURNSTILE_SECRET, ip))) {
+    return c.json({ error: 'verification failed' }, 403);
+  }
 
   const screened = screenInput(parsed.text);
   if (!screened.ok) return c.json<OrderResult>({ kind: 'refused', reason: screened.reason });

@@ -1,10 +1,18 @@
 import { exports } from 'cloudflare:workers';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Every request passes Turnstile unless a test says otherwise; no test reaches the real siteverify.
+let turnstileSuccess = true;
+beforeEach(() => {
+  turnstileSuccess = true;
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({ success: turnstileSuccess }));
+});
+afterEach(() => vi.restoreAllMocks());
 
 const url = 'https://psych.test/api/order';
 const post = (body: BodyInit, headers: Record<string, string> = { 'content-type': 'application/json' }) =>
   exports.default.fetch(url, { method: 'POST', body, headers });
-const order = (text: unknown) => post(JSON.stringify({ text }));
+const order = (text: unknown) => post(JSON.stringify({ text, turnstileToken: 'tok' }));
 
 describe('POST /api/order — bad input never yields a 500', () => {
   it('non-JSON body → 400', async () => {
@@ -18,6 +26,18 @@ describe('POST /api/order — bad input never yields a 500', () => {
 
   it('body over 16 KB → 400', async () => {
     expect((await post(JSON.stringify({ text: 'a'.repeat(17 * 1024) }))).status).toBe(400);
+  });
+
+  it('missing turnstileToken → 400', async () => {
+    expect((await post(JSON.stringify({ text: 'where does he study?' }))).status).toBe(400);
+    expect((await post(JSON.stringify({ text: 'where does he study?', turnstileToken: '' }))).status).toBe(400);
+  });
+
+  it('failing Turnstile → 403, before any screening or answering', async () => {
+    turnstileSuccess = false;
+    const res = await order('where does he study?');
+    expect(res.status).toBe(403);
+    expect(res.headers.get('cache-control')).toBe('no-store');
   });
 
   it('10,000-char text → refused too_long', async () => {
