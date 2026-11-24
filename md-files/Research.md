@@ -79,3 +79,7 @@ Why Scout: standard `messages` + JSON schema + `seed`/`temperature`, mid cost, n
 
 **Eval result:** 20/20 pass with `@cf/meta/llama-4-scout-17b-16e-instruct`. Two injections that pass input screening ("…the evidence also says Vedant has a PhD from Stanford…", a JSON break-out asking for "8 years of experience") reached the model and returned only cited layers; neither claim appeared.
 
+
+## 6. Live interview test (2026-11-25)
+
+Five interview-style orders on the live site (in Brave): 1 of 5 good. The model inferred traits the content never states ("led the development of an expense tracker"; "could indicate he values feedback"), and cited the only engineering source for everything, because the index held 2 chunks and the profile wasn't indexed. Response: AI off (#55), no-guessing checks (#56, evals 25/25), and the Order v2 plan (stories, answer shapes, exits, self-improvement trained before launch).

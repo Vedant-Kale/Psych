@@ -86,6 +86,8 @@ POST /api/order { text, turnstileToken }
 any AI error / kill switch → house menu
 ```
 
+**Order v2 (planned, md-files/plans/order-v2.md)** adds, in order: a conversation id (random, per browser tab, no cookie) and the last 2–3 turns; sorting the order by its words (role fit / behaviour / fact) before retrieval; hybrid retrieval (MiniSearch BM25 + Workers AI embeddings, diversified across sources, re-weighted by learned chunk scores within limits); an answer shape per kind; the no-guessing checks (#56); a gap fallback (closest documented work, labelled); and a signal endpoint `POST /api/signal` (`yes`, `no`, `opened-source`, `receipt`, `interview`) plus implicit scoring from the next turn.
+
 ## 5. Data
 
 | Table (D1) | Columns | Retention |
@@ -94,6 +96,10 @@ any AI error / kill switch → house menu
 | `ai_budget` | `day` (UTC date), `calls` | Purged after 30 days |
 | `unknown_questions` | `id`, `text`, `created_at` | Deleted after 30 days |
 | `inquiries` (post-launch) | `id`, `name`, `contact`, `order_json`, `message`, `created_at` | Stated on /privacy |
+| `turns` (Order v2) | `id`, `conversation_id` (random, per tab), `seq`, `text` (full order text, decision #30), `kind`, `chunk_ids`, `score`, `created_at` | Deleted after 30 days |
+| `signals` (Order v2) | `turn_id`, `type`, `created_at` | Deleted after 30 days |
+| `chunk_weights` (Order v2) | `chunk_id`, `weight` (bounded), `updated_at` | Kept; no personal data |
+| `daily_outcomes` (Order v2) | `day`, counts per outcome | Kept; counts only |
 
 No raw IPs are stored. Content never lives in D1.
 
@@ -121,4 +127,5 @@ No raw IPs are stored. Content never lives in D1.
 |---|---|---|
 | Local | `next dev` + `wrangler dev` (local D1, Turnstile test keys) | Owner / Claude |
 | Preview | Cloudflare preview URL per branch, not linked publicly | Owner testing on real devices |
+| Staging (Order v2) | Worker `psych-staging` with its own D1 `psych-staging` and AI on; unlisted URL | Simulator runs and the 10–20 person private beta |
 | Production | `psych.<account>.workers.dev`; custom domain when inquiries launch | Public, after the quality bar passes |

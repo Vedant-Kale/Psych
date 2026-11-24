@@ -44,7 +44,7 @@ Companion files: [Design](Design.md) · [Architecture](Architecture.md) · [Tech
 | 10 | 11-24 | Realism via **real-time 3D in the browser** | APPROVED | Owner's choice over pre-rendered |
 | 11 | 11-24 | Quality over speed; launch when the quality bar is met, not by date | APPROVED | "Time can be extended but I don't want to compromise" |
 | 12 | 11-24 | **$0 budget**, free plans only; public deploy when done | APPROVED | Owner constraint |
-| 13 | 11-24 | **Realistic likeness** of the owner, as frozen captured moments | APPROVED likeness / PROPOSED method | Avoids uncanny animation |
+| 13 | 11-24 | **Realistic likeness** of the owner, as frozen captured moments | APPROVED likeness / method updated by #28 | Avoids uncanny animation |
 | 14 | 11-24 | Perspective arc: third-person → first-person; Palace at projects; bookend at dawn | APPROVED arc / PROPOSED bookend | Owner's idea |
 | 15 | 11-24 | At The Order the visitor swaps sides and is served by the owner | APPROVED | Emotional core of hospitality |
 | 16 | 11-24 | Public code: one finance repo (after history scan) + public extracts repo; portfolio repo public | APPROVED / PROPOSED portfolio public | Engineers look for code |
@@ -54,6 +54,16 @@ Companion files: [Design](Design.md) · [Architecture](Architecture.md) · [Tech
 | 20 | 11-24 | RMIT resources not used for the live site; RMIT email only to verify student offers | PROPOSED | RMIT IT Acceptable Use Standard bans commercial use |
 | 21 | 11-24 | Claim GitHub Student Pack domain when inquiries launch | PROPOSED | Free first year starts on claim; needed for email routing |
 | 22 | 11-24 | Documentation consolidated into `md-files/`; planning started with the writing-plans skill | APPROVED | Owner request |
+| 23 | 11-25 | The Order serves **job and internship** goals first: hiring managers and the references the owner talks to get to know him | APPROVED | Owner's priority |
+| 24 | 11-25 | **Stories** (situation, action, result) become core content, captured by Claude interviewing the owner, approved by the owner; they feed answers, bar props and behaviour | APPROVED | Behaviour can only be proven by real events; live test showed the AI guessing without them |
+| 25 | 11-25 | **No guessing:** the AI never infers traits; hedged layers and people/business claims the cited text doesn't state are dropped in code | APPROVED, done (#56) | Live test: "led the development…" invented |
+| 26 | 11-25 | Every answer ends **satisfied or as an inquiry**: exits on every result, "Did this answer it?" | APPROVED | No dead ends for visitors |
+| 27 | 11-25 | 21:00 becomes a **first-person conversation**: chat bar at the bottom, the visitor's last question faint above it, answers as subtitles while the owner works, behaviour states, pacing by the conversation, a rare "one minute" interruption shown as a ~3 s film cut | APPROVED | Owner's idea: realism and hospitality |
+| 28 | 11-25 | Owner's motion comes from **filmed video loops** placed in the 3D bar; scans stay for frozen moments (updates #13) | APPROVED | Real footage avoids the uncanny valley at $0; talking while working avoids lip-sync |
+| 29 | 11-25 | **Self-improvement:** scored visitor signals tune evidence ranking, follow-ups and style within limits; never facts; anything that changes what it says goes through an owner-approved PR | APPROVED | Better over time without risking honesty |
+| 30 | 11-25 | Store **full order text for 30 days** (no IP, no account) for learning and the gap report | APPROVED | Richer gap reports |
+| 31 | 11-25 | **Train before launch:** simulator with personas + held-out set + private staging beta (10–20 people); the AI goes back on only when launch gates pass | APPROVED | Portfolio traffic is too low to learn live first |
+| 32 | 11-25 | AI switched **off** in production until the launch gates pass (#55) | APPROVED | Over-claims seen in the live test |
 
 ## 5. Open items
 
@@ -65,3 +75,7 @@ Companion files: [Design](Design.md) · [Architecture](Architecture.md) · [Tech
 | Three capture sessions (pitch, behind counter, dawn with coffee) | M3 |
 | Year-two domain renewal price; Groq free limits; R2 free limits | Before relying on them |
 | Owner accounts: GitHub repo, Cloudflare account (personal email, not RMIT) | M1 |
+| Story interview sessions (captaincy, bar and events work, feedback, pressure, a mistake) | Order v2 |
+| Filming session for the bar loops (shot list in Design §5) | M3 |
+| 10–20 beta testers for the private staging Order | Launch gates |
+| Staging: Turnstile hostname + staging Worker secrets (owner sets them) | Staging ticket |

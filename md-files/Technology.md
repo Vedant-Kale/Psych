@@ -35,6 +35,7 @@ Key free limits that shape the build:
 | Search for The Order | MiniSearch (BM25) | pinned |
 | API | Cloudflare Worker, Hono, Zod | pinned |
 | AI | Workers AI, JSON mode; model chosen by evals; Groq free as backup only if needed | config value |
+| Embeddings (Order v2) | Workers AI `@cf/baai/bge-small-en-v1.5`; chunk vectors computed at deploy, query vector per order | config value |
 | Database | Cloudflare D1 + SQL migrations | — |
 | Bot check | Cloudflare Turnstile | — |
 | Analytics | Cloudflare Web Analytics (cookieless) | — |
@@ -42,7 +43,8 @@ Key free limits that shape the build:
 | CI/CD | GitHub Actions (public repo, free), Wrangler deploy | — |
 | Security tooling | gitleaks, `npm audit`, Dependabot | — |
 | 3D pipeline | Blender → gltf-transform (Draco/Meshopt, KTX2; **WebP for ink**) | — |
-| Likeness | Classic Scaniverse (iOS, free) → SuperSplat (crop, grade, decimate) → SOG | — |
+| Likeness | Classic Scaniverse (iOS, free) → SuperSplat (crop, grade, decimate) → SOG (frozen moments) | — |
+| Filmed loops (21:00) | Phone video → ffmpeg (grade, trim to seamless loops, H.264 + WebM, ≤ 20 MiB each) → three.js `VideoTexture` | — |
 
 ## 3. Rejected, and why
 
