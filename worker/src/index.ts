@@ -13,6 +13,15 @@ export type Env = {
 
 const app = new Hono<{ Bindings: Env }>().basePath('/api');
 
+// Static assets get these from out/_headers; Worker responses don't, so set them here.
+app.use('*', async (c, next) => {
+  await next();
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.header('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  c.header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+});
+
 app.get('/health', (c) => c.json({ ok: true }));
 
 app.use('/order', async (c, next) => {
