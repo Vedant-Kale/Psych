@@ -1,3 +1,4 @@
+import { MAX_LAYERS } from './citations';
 import type { Message } from './prompt';
 
 /** Same shape the citations check expects; JSON mode asks the model to fill it. */
@@ -6,7 +7,7 @@ const responseSchema = {
   properties: {
     layers: {
       type: 'array',
-      maxItems: 5,
+      maxItems: MAX_LAYERS,
       items: {
         type: 'object',
         properties: {

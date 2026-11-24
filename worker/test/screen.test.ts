@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { HouseMenu, Profile } from '../../lib/content/schema';
+import type { Profile } from '../../lib/content/schema';
 import { answerFromProfile } from '../src/order/facts';
-import { houseMenu } from '../src/order/house-menu';
 import { parseOrderRequest } from '../src/order/request';
 import { screenInput } from '../src/order/screen';
 
@@ -18,19 +17,19 @@ const profile: Profile = {
 describe('parseOrderRequest', () => {
   it('rejects non-object body with 400', () => {
     for (const body of [null, 'text', 42, [], undefined]) {
-      expect(parseOrderRequest(body)).toEqual({ ok: false, status: 400 });
+      expect(parseOrderRequest(body)).toEqual({ ok: false });
     }
   });
 
   it('rejects a missing or non-string text', () => {
-    expect(parseOrderRequest({ turnstileToken: 't' })).toEqual({ ok: false, status: 400 });
-    expect(parseOrderRequest({ text: 5, turnstileToken: 't' })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ turnstileToken: 't' })).toEqual({ ok: false });
+    expect(parseOrderRequest({ text: 5, turnstileToken: 't' })).toEqual({ ok: false });
   });
 
   it('rejects missing token', () => {
-    expect(parseOrderRequest({ text: 'hello' })).toEqual({ ok: false, status: 400 });
-    expect(parseOrderRequest({ text: 'hello', turnstileToken: '' })).toEqual({ ok: false, status: 400 });
-    expect(parseOrderRequest({ text: 'hello', turnstileToken: 'x'.repeat(2049) })).toEqual({ ok: false, status: 400 });
+    expect(parseOrderRequest({ text: 'hello' })).toEqual({ ok: false });
+    expect(parseOrderRequest({ text: 'hello', turnstileToken: '' })).toEqual({ ok: false });
+    expect(parseOrderRequest({ text: 'hello', turnstileToken: 'x'.repeat(2049) })).toEqual({ ok: false });
   });
 
   it('keeps a 10,000-char text unchanged (length is screened later, not here)', () => {
@@ -95,11 +94,14 @@ describe('answerFromProfile', () => {
   it('"build me an AI agent" → null (goes to AI)', () => {
     expect(answerFromProfile('build me an AI agent', profile)).toBeNull();
   });
-});
 
-describe('houseMenu', () => {
-  it('wraps the menu with the reason', () => {
-    const menu: HouseMenu = { items: [{ skill: 's', evidence: ['x'], rationale: 'r' }] };
-    expect(houseMenu(menu, 'disabled')).toEqual({ kind: 'house-menu', reason: 'disabled', menu });
+  it.each([
+    'I need an engineer to build email automation agents',
+    'Someone with strong GitHub Actions CI skills',
+    'Of course I want a RAG builder',
+    'An ML engineer for an education-tech startup',
+    'Agent with a high degree of autonomy',
+  ])('order that only mentions a keyword goes to AI: %s', (order) => {
+    expect(answerFromProfile(order, profile)).toBeNull();
   });
 });

@@ -1,6 +1,5 @@
 import {
   allCertificates as certificates,
-  allHouseMenus,
   allPosts as posts,
   allProfiles,
   allProjects as projects,
@@ -19,6 +18,5 @@ function single<T>(items: readonly T[], file: string): T {
   return items[0]!;
 }
 export const profile = () => single(allProfiles, 'content/profile.yaml');
-export const houseMenu = () => single(allHouseMenus, 'content/house-menu.yaml');
 
 export const postBySlug = (slug: string) => posts.find((p) => p.slug === slug);

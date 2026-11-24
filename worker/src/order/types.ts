@@ -5,7 +5,7 @@ export type RefusalReason = 'empty' | 'too_long' | 'injection' | 'off_topic';
 export type HouseMenuReason = 'budget' | 'rate-limit' | 'ai-error' | 'disabled';
 
 export type OrderResult =
-  | { kind: 'mix'; layers: Layer[]; note?: string }
+  | { kind: 'mix'; layers: Layer[] }
   | { kind: 'fact'; answer: string; sourceIds: string[] }
   | { kind: 'none'; message: string }
   | { kind: 'refused'; reason: RefusalReason }
