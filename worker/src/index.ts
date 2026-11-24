@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { purgeOld } from './db/purge';
 import { handleOrder } from './order/handler';
 
 export type Env = {
@@ -20,4 +21,10 @@ app.use('/order', async (c, next) => {
 });
 app.post('/order', handleOrder);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  /** Daily retention purge (cron in wrangler.jsonc). */
+  scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(purgeOld(env.DB, Date.now()));
+  },
+} satisfies ExportedHandler<Env>;
