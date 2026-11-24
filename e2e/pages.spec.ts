@@ -50,7 +50,7 @@ test('each project page shows its title and status', async ({ page }) => {
   }
 });
 
-for (const path of ['/facts/', `/projects/${projects[0]?.slug}/`, '/influences/', '/privacy/', '/']) {
+for (const path of ['/facts/', `/projects/${projects[0]?.slug}/`, '/influences/', '/privacy/', '/order/', '/']) {
   test(`axe finds no violations on ${path}`, async ({ page }) => {
     const res = await page.goto(path);
     expect(res?.status()).toBe(200);
@@ -60,7 +60,7 @@ for (const path of ['/facts/', `/projects/${projects[0]?.slug}/`, '/influences/'
 
 test('sitemap lists every static route', async ({ request }) => {
   const xml = await (await request.get('/sitemap.xml')).text();
-  for (const path of ['/', '/facts/', '/influences/', '/privacy/', '/palace/why-bars-light-amber/', ...projects.map((p) => `/projects/${p.slug}/`)]) {
+  for (const path of ['/', '/facts/', '/influences/', '/order/', '/privacy/', '/palace/why-bars-light-amber/', ...projects.map((p) => `/projects/${p.slug}/`)]) {
     expect(xml).toContain(`${path}</loc>`);
   }
 });

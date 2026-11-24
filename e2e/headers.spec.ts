@@ -9,7 +9,9 @@ const csp = readFileSync('out/_headers', 'utf8')
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/*', async (route) => {
-    if (route.request().resourceType() !== 'document') return route.continue();
+    // Only our own pages: a third-party frame (Turnstile) serves its own headers.
+    const req = route.request();
+    if (req.resourceType() !== 'document' || !req.url().startsWith('http://localhost')) return route.continue();
     const res = await route.fetch();
     await route.fulfill({ response: res, headers: { ...res.headers(), 'content-security-policy': csp } });
   });
@@ -26,7 +28,7 @@ test("the CSP has no 'unsafe-inline' for scripts", () => {
   expect(scriptSrc).not.toContain("'unsafe-inline'");
 });
 
-for (const path of ['/', '/facts/', '/palace/why-bars-light-amber/', '/projects/expense-track/', '/influences/', '/privacy/', '/no-such-page/']) {
+for (const path of ['/', '/facts/', '/palace/why-bars-light-amber/', '/projects/expense-track/', '/influences/', '/privacy/', '/order/', '/no-such-page/']) {
   test(`no CSP violations on ${path}`, async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (m) => {
