@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/build-graph.ts && node scripts/build-search-index.ts",
+    "build": "next build && node scripts/build-graph.ts && node scripts/csp-hashes.ts && node scripts/check-asset-sizes.ts && node scripts/build-search-index.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
     "test": "vitest run",
