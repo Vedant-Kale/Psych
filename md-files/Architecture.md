@@ -90,7 +90,7 @@ any AI error / kill switch → house menu
 
 | Table (D1) | Columns | Retention |
 |---|---|---|
-| `rate_limits` | `key` (sha256 of IP + daily salt), `window_start`, `count` | Purged daily |
+| `rate_limits` | `key` (sha256 of IP + secret + UTC day), `ts`; one row per accepted order, so the 10-minute window slides | Purged after 30 days |
 | `ai_budget` | `day` (UTC date), `calls` | Purged after 30 days |
 | `unknown_questions` | `id`, `text`, `created_at` | Deleted after 30 days |
 | `inquiries` (post-launch) | `id`, `name`, `contact`, `order_json`, `message`, `created_at` | Stated on /privacy |

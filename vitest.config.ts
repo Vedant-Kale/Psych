@@ -1,5 +1,7 @@
-import { cloudflareTest } from '@cloudflare/vitest-plugin';
+import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
 import { defineConfig } from 'vitest/config';
+
+const migrations = await readD1Migrations('worker/migrations');
 
 export default defineConfig({
   test: {
@@ -17,10 +19,16 @@ export default defineConfig({
           cloudflareTest({
             wrangler: { configPath: './wrangler.jsonc' },
             // Cloudflare's published always-pass test secret; never a real one.
-            miniflare: { bindings: { TURNSTILE_SECRET: '1x0000000000000000000000000000000AA' } },
+            miniflare: {
+              bindings: {
+                TURNSTILE_SECRET: '1x0000000000000000000000000000000AA',
+                IP_SALT_SECRET: 'test-salt-not-a-secret',
+                TEST_MIGRATIONS: migrations,
+              },
+            },
           }),
         ],
-        test: { name: 'worker', include: ['worker/test/**/*.test.ts'] },
+        test: { name: 'worker', include: ['worker/test/**/*.test.ts'], setupFiles: ['worker/test/apply-migrations.ts'] },
       },
     ],
   },
