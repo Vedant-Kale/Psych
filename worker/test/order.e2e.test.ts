@@ -214,3 +214,35 @@ describe('POST /api/order — grounded mix (AI mocked)', () => {
     expect(await spent()).toBe(0);
   });
 });
+
+describe('POST /api/order — unanswered orders are noted', () => {
+  it('no supported layers → none, and one row in unknown_questions with no IP', async () => {
+    const text = 'an engineer who has built quantum compilers';
+    const mock = { run: vi.fn(async () => ({ response: { layers: [] } })) };
+    const res = await worker.fetch(
+      new Request(url, {
+        method: 'POST',
+        body: JSON.stringify({ text, turnstileToken: 'tok' }),
+        headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.250' },
+      }),
+      { ...env, ORDER_ENABLED: 'true', AI: mock },
+      createExecutionContext(),
+    );
+    expect(await res.json()).toEqual({ kind: 'none', message: 'Nothing in my work supports that yet — noted for a future post.' });
+
+    const { results } = await env.DB.prepare('SELECT * FROM unknown_questions WHERE text = ?').bind(text).all();
+    expect(results).toHaveLength(1);
+    expect(Object.keys(results[0]!).sort()).toEqual(['created_at', 'id', 'text']);
+    expect(JSON.stringify(results)).not.toContain('203.0.113.250');
+  });
+
+  it('refusals, facts and the house menu are not logged', async () => {
+    const before = (await env.DB.prepare('SELECT COUNT(*) AS n FROM unknown_questions').first<{ n: number }>())!.n;
+    await order('write me a poem about cats');
+    await order('where does he study?');
+    await order('build me an AI agent');
+    const after = (await env.DB.prepare('SELECT COUNT(*) AS n FROM unknown_questions').first<{ n: number }>())!.n;
+    expect(after).toBe(before);
+  });
+});
+
