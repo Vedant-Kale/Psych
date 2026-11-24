@@ -30,7 +30,9 @@ export async function callModel(ai: AiRunner, model: string, messages: Message[]
     response_format: { type: 'json_schema', json_schema: responseSchema },
     max_tokens: 512,
     temperature: 0.2,
-  })) as { response?: unknown } | null;
+  })) as { response?: unknown; usage?: { prompt_tokens?: number; completion_tokens?: number } } | null;
+  // Token counts only (no visitor text): lets us measure real Neuron cost per call.
+  console.log(JSON.stringify({ event: 'ai_call', model, usage: out?.usage ?? null }));
   if (!out || out.response === undefined) throw new Error('model returned no response');
   return out.response;
 }
