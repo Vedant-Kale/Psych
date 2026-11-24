@@ -18,6 +18,8 @@ export default defineConfig({
         plugins: [
           cloudflareTest({
             wrangler: { configPath: './wrangler.jsonc' },
+            // Never reach real Cloudflare services (Workers AI) from tests; AI-path tests pass a mock binding.
+            remoteBindings: false,
             // Cloudflare's published always-pass test secret; never a real one.
             miniflare: {
               bindings: {

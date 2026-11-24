@@ -28,7 +28,7 @@ M3–M8 get their own detailed plans (`md-files/plans/M<n>-*.md`) written at the
 - No raw IP addresses stored; IPs only as `sha256(ip + dailySalt)`.
 - Unanswered questions and rate-limit rows deleted after **30 days**.
 - The Order never shows a claim without a citation to a supplied chunk ID.
-- Daily AI cap **400 calls** (below the 10,000-Neuron free quota; retune after measuring Neuron cost in Task 12).
+- Daily AI cap **120 calls** (≈ 75 Neurons/call estimate × 120 = 9,000, below the 10,000-Neuron free quota; see Research §5; re-measure during evals).
 - Order input: **3–500 characters** after trimming.
 - Rate limits per IP key: **5 orders per 10 minutes, 30 per UTC day**.
 - Retrieval top-k: **6** chunks.
