@@ -15,7 +15,8 @@
     "e2e": "playwright test",
     "verify": "npm run lint && npm run build && npm run test && npm run typecheck && npm run e2e",
     "deploy": "wrangler deploy",
-    "evals": "node evals/run.ts"
+    "evals": "node evals/run.ts",
+    "gaps:raw": "node scripts/gap-report.ts raw"
   },
   "dependencies": {
     "hono": "4.13.21",
