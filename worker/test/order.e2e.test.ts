@@ -236,7 +236,11 @@ describe('POST /api/order — unanswered orders are noted', () => {
       { ...env, ORDER_ENABLED: 'true', AI: mock },
       createExecutionContext(),
     );
-    expect(await res.json()).toEqual({ kind: 'none', message: 'Nothing in my work supports that yet — noted for a future post.' });
+    expect(await res.json()).toEqual({
+      kind: 'none',
+      message: 'Nothing in my work supports that yet — noted for a future post.',
+      closest: expect.stringMatching(/^[a-z0-9-]+#\d+$/),
+    });
 
     const { results } = await env.DB.prepare('SELECT * FROM unknown_questions WHERE text = ?').bind(text).all();
     expect(results).toHaveLength(1);

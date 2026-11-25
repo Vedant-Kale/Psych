@@ -31,5 +31,19 @@ export const errorCopy: Record<OrderError, string> = {
   'bad-request': "That order didn't arrive in one piece. Try again.",
 };
 
+export const exitCopy = {
+  question: 'Did this answer it?',
+  yes: 'Yes',
+  no: 'No',
+  thanksYes: 'Glad it helped.',
+  receiptHint: 'Your receipt is above: print it or save it as a PDF.',
+  thanksNo: 'Thanks. That helps me improve the answers.',
+  sorryNo: 'Sorry about that. What was missing?',
+  missingLabel: 'What was missing?',
+  interview: 'Ask for an interview',
+  copied: 'Your summary is copied. Paste it into your message.',
+  related: 'Related, not the same',
+} as const;
+
 export const turnstileBlocked =
   "The human check couldn't load, so orders can't go through. An ad blocker may be stopping it.";

@@ -209,3 +209,95 @@ test('the privacy page says the full text of orders is kept for 30 days', async 
   await expect(page.getByRole('listitem').filter({ hasText: /full text of your orders/i })).toContainText(/30 days/);
   await expect(page.getByRole('listitem').filter({ hasText: /last three orders/i })).toBeVisible();
 });
+
+// ---- exits: every answer ends in somewhere to go, and what the visitor does is sent as a signal ----
+
+const mixTurn = { ...(cases[0]!.body as object), turnId: 7 };
+
+/** Answers /api/order with one fixed reply and collects what is posted to /api/signal. */
+async function withSignals(page: Page, body: unknown) {
+  const signals: { conversationId: string; turnId: number; type: string }[] = [];
+  await page.route('**/api/order', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) }));
+  await page.route('**/api/signal', async (r) => {
+    signals.push(r.request().postDataJSON());
+    await r.fulfill({ status: 204 });
+  });
+  return signals;
+}
+
+test('a stored answer asks "Did this answer it?"; Yes sends one signal for that turn and points to the receipt', async ({ page }) => {
+  const signals = await withSignals(page, mixTurn);
+  await order(page);
+  await expect(page.getByText('Did this answer it?')).toBeVisible();
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(page.getByText(/glad it helped/i)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'No' })).toHaveCount(0);
+  await expect.poll(() => signals.length).toBe(1);
+  expect(signals[0]).toMatchObject({ turnId: 7, type: 'yes' });
+  expect(signals[0]!.conversationId).toMatch(/^[A-Za-z0-9_-]{22,64}$/);
+});
+
+test('No sends a signal and thanks the visitor (no interview button without a LinkedIn in the profile)', async ({ page }) => {
+  const signals = await withSignals(page, mixTurn);
+  await order(page);
+  await page.getByRole('button', { name: 'No' }).click();
+  await expect(page.getByText(/helps me improve/i)).toBeVisible();
+  await expect.poll(() => signals.length).toBe(1);
+  expect(signals[0]).toMatchObject({ turnId: 7, type: 'no' });
+  await expect(page.getByRole('button', { name: /ask for an interview/i })).toHaveCount(0);
+});
+
+test('fact and none answers have the same exit; none names the closest work as related, not the same', async ({ page }) => {
+  await withSignals(page, { kind: 'fact', answer: 'Master of AI at RMIT.', sourceIds: ['profile'], turnId: 3 });
+  await order(page);
+  await expect(page.getByText('Did this answer it?')).toBeVisible();
+
+  const page2 = await page.context().newPage();
+  await page2.route('https://challenges.cloudflare.com/**', (r) => r.fulfill({ contentType: 'application/javascript', body: TURNSTILE_STUB }));
+  await withSignals(page2, { kind: 'none', message: 'Nothing in my work supports that yet.', closest: 'expense-track#0', turnId: 4 });
+  await order(page2);
+  await expect(page2.getByText('Did this answer it?')).toBeVisible();
+  await expect(page2.getByText(/related, not the same/i)).toBeVisible();
+  await expect(page2.getByRole('link', { name: 'expense-track-agent' })).toBeVisible();
+});
+
+test('opening a source sends one opened-source signal even if it is clicked twice', async ({ page }) => {
+  const signals = await withSignals(page, mixTurn);
+  await order(page);
+  const link = page.getByRole('link', { name: 'expense-track-agent' });
+  await link.evaluate((a) => a.addEventListener('click', (e) => e.preventDefault()));
+  await link.click();
+  await link.click();
+  await expect.poll(() => signals.length).toBe(1);
+  expect(signals[0]).toMatchObject({ turnId: 7, type: 'opened-source' });
+});
+
+test('printing the receipt sends a receipt signal', async ({ page }) => {
+  const signals = await withSignals(page, mixTurn);
+  await order(page);
+  await page.evaluate(() => {
+    window.print = () => {};
+  });
+  await page.getByRole('button', { name: 'Print or save as PDF' }).click();
+  await expect.poll(() => signals.length).toBe(1);
+  expect(signals[0]).toMatchObject({ turnId: 7, type: 'receipt' });
+});
+
+test('no exits, and no signals, when the answer was not stored (no turn id) or was a refusal', async ({ page }) => {
+  const signals = await withSignals(page, cases[0]!.body);
+  await order(page);
+  await expect(page.getByText('Secure multi-user data')).toBeVisible();
+  await expect(page.getByText('Did this answer it?')).toHaveCount(0);
+  expect(signals).toEqual([]);
+});
+
+test('the exits have no axe violations and work by keyboard', async ({ page }) => {
+  await withSignals(page, mixTurn);
+  await order(page);
+  await expect(page.getByText('Did this answer it?')).toBeVisible();
+  const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(violations).toEqual([]);
+  await page.getByRole('button', { name: 'Yes' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText(/glad it helped/i)).toBeVisible();
+});

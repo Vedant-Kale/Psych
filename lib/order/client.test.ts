@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { postOrder } from './client';
+import { postOrder, postSignal } from './client';
 
 const ID = 'c'.repeat(36);
 const reply = (status: number, body: unknown, type = 'application/json') => async () =>
@@ -46,5 +46,25 @@ describe('postOrder', () => {
     expect(new Headers(seen?.init?.headers).get('content-type')).toBe('application/json');
     expect(JSON.parse(String(seen?.init?.body))).toEqual({ text: 'an engineer', turnstileToken: 'tok', conversationId: ID });
     expect(seen?.init?.signal).toBeInstanceOf(AbortSignal);
+  });
+});
+
+describe('postSignal', () => {
+  it('posts the conversation id, turn id and type with keepalive, so it survives leaving the page', async () => {
+    let seen: { url: string; init?: RequestInit } | undefined;
+    const spy = async (url: string | URL | Request, init?: RequestInit) => {
+      seen = { url: String(url), init };
+      return new Response(null, { status: 204 });
+    };
+    await postSignal(ID, 7, 'opened-source', spy);
+    expect(seen?.url).toBe('/api/signal');
+    expect(seen?.init?.method).toBe('POST');
+    expect(seen?.init?.keepalive).toBe(true);
+    expect(JSON.parse(String(seen?.init?.body))).toEqual({ conversationId: ID, turnId: 7, type: 'opened-source' });
+  });
+
+  it('never throws, whatever goes wrong', async () => {
+    await expect(postSignal(ID, 1, 'yes', async () => Promise.reject(new TypeError('Failed to fetch')))).resolves.toBeUndefined();
+    await expect(postSignal(ID, 1, 'yes', async () => new Response('boom', { status: 500 }))).resolves.toBeUndefined();
   });
 });
