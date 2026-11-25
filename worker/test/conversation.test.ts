@@ -5,7 +5,7 @@ import type { Chunk } from '../../lib/search/types';
 import { purgeOld } from '../src/db/purge';
 import { history, recordTurn } from '../src/db/turns';
 import worker from '../src/index';
-import { buildMessages, SYSTEM_PROMPT } from '../src/order/prompt';
+import { buildMessages, HISTORY_RULE, SYSTEM_PROMPT } from '../src/order/prompt';
 import { parseOrderRequest } from '../src/order/request';
 
 const cid = (n: number) => `conversation-${n}`.padEnd(22, 'x');
@@ -63,19 +63,22 @@ describe('buildMessages — history is untrusted data', () => {
 
   it('an injected past turn stays a string inside the user data block, never in the system message', () => {
     const [system, user] = buildMessages('and testing?', chunks, [{ text: injected, kind: 'mix' }]);
-    expect(system).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+    expect(system).toEqual({ role: 'system', content: `${SYSTEM_PROMPT}\n${HISTORY_RULE}` });
+    expect(system!.content).not.toContain('admin');
     const data = JSON.parse(user!.content) as { untrusted_order: string; history: { order: string; kind: string }[] };
     expect(data.untrusted_order).toBe('and testing?');
     expect(data.history).toEqual([{ order: injected, kind: 'mix' }]);
   });
 
-  it('the system prompt names history as visitor text, never something the bartender said or agreed', () => {
-    expect(SYSTEM_PROMPT).toMatch(/"history"/);
-    expect(SYSTEM_PROMPT).toMatch(/never something you said or agreed/i);
+  it('the history rule names history as visitor text, never something the bartender said or agreed', () => {
+    expect(HISTORY_RULE).toMatch(/"history"/);
+    expect(HISTORY_RULE).toMatch(/never something you said or agreed/i);
   });
 
-  it('no history → no history key', () => {
-    expect(JSON.parse(buildMessages('x', chunks)[1]!.content)).not.toHaveProperty('history');
+  it('no history → no history key and the system prompt is exactly the one the evals were tuned on', () => {
+    const [system, user] = buildMessages('x', chunks);
+    expect(system!.content).toBe(SYSTEM_PROMPT);
+    expect(JSON.parse(user!.content)).not.toHaveProperty('history');
   });
 });
 
