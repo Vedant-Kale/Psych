@@ -40,7 +40,7 @@ describe('recordTurn and history', () => {
     const { results } = await env.DB.prepare('SELECT * FROM turns WHERE conversation_id = ? ORDER BY seq').bind(cid(1)).all();
     expect(results.map((r) => r.seq)).toEqual([1, 2]);
     expect(results[0]!.chunk_ids).toBe('["expense-track#0"]');
-    expect(Object.keys(results[0]!).sort()).toEqual(['chunk_ids', 'conversation_id', 'created_at', 'id', 'kind', 'seq', 'text']);
+    expect(Object.keys(results[0]!).sort()).toEqual(['chunk_ids', 'conversation_id', 'created_at', 'id', 'kind', 'score', 'seq', 'text', 'vector']);
   });
 
   it('history is capped at the last 3 turns, oldest first, and only from the same conversation', async () => {

@@ -73,11 +73,14 @@ export async function retrieveHybrid(
   text: string,
   k = 6,
   timeoutMs = EMBED_TIMEOUT_MS,
+  /** Receives the order's embedding when there is one, so scoring can reuse it instead of calling the model again. */
+  embedding?: { queryVector?: number[] },
 ): Promise<Chunk[]> {
   const keyword = retrieve(index, text, k * 2);
   const first = Object.values(vectors)[0];
   const query = first ? await embedQuery(ai, text, first.length, timeoutMs) : null;
 
+  if (query && embedding) embedding.queryVector = query;
   const byId = new Map(keyword.map((c) => [c.id, c]));
   const score = new Map<string, number>();
   const add = (id: string, rank: number) => score.set(id, (score.get(id) ?? 0) + 1 / (RRF_K + rank));
@@ -109,4 +112,10 @@ export async function retrieveHybrid(
     if (out.length === k) break;
   }
   return out;
+}
+
+/** The text of chunks by id, for comparing an order with the evidence that answered the one before it. Unknown ids are skipped. */
+export function chunkTexts(index: AsPlainObject, ids: string[]): string[] {
+  const ms = load(index);
+  return ids.filter((id) => ms.has(id)).map((id) => String(ms.getStoredFields(id)!.text));
 }

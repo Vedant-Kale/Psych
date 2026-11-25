@@ -1,8 +1,10 @@
 import type { Context } from 'hono';
 import type { Env } from '../index';
 import { readBodyLimited } from './body';
+import { bump, scoreSignal, type OutcomeColumn } from '../db/outcomes';
 import { checkRate, ipKey, utcDay } from './limits';
 import { CONVERSATION_ID } from './request';
+import { nextScore, type SignalType } from './score';
 
 export const SIGNAL_TYPES = ['yes', 'no', 'opened-source', 'receipt', 'interview'] as const;
 export const MAX_SIGNALS_PER_CONVERSATION = 20;
@@ -57,5 +59,8 @@ export async function handleSignal(c: Context<{ Bindings: Env }>) {
     )
     .bind(conversationId, turnId, type, now, MAX_SIGNALS_PER_CONVERSATION)
     .run();
-  return meta.changes === 1 ? c.body(null, 204) : c.json({ error: 'rejected' }, 400);
+  if (meta.changes !== 1) return c.json({ error: 'rejected' }, 400);
+  await scoreSignal(c.env.DB, turnId, (score) => nextScore(score, type as SignalType));
+  await bump(c.env.DB, now, type.replace('-', '_') as OutcomeColumn);
+  return c.body(null, 204);
 }
