@@ -10,6 +10,27 @@
 
 **Spec:** md-files/Design.md §10 and §5; md-files/Context.md decisions #23–#32; md-files/Architecture.md §4, §5, §8; md-files/Research.md §6.
 
+## Tickets
+
+| Task | Issue | Blocked by |
+|---|---|---|
+| 1 Staging | done in #58 | — |
+| 2 Profile as evidence | #59 | — |
+| 3 Stories | #60 | — |
+| 4 Conversation memory | #61 | — |
+| 5 Order kinds | #62 | #59, #60 |
+| 6 Exits and signals | #63 | #61 |
+| 7 Clarifying question | #64 | #62 |
+| 8 Hybrid retrieval | #65 | #59 |
+| 9 Signal scoring | #66 | #61, #63, #65 |
+| 10 Simulator | #67 | #62, #66 |
+| 11 Learned ranking and follow-ups | #68 | #66 |
+| 11 Gap report (split out) | #69 | #66 |
+| 12 Beta and launch gates | #70 | #67, #68, #69 |
+| 13 AI back on | #71 | #70 |
+
+Decisions #33–#36 (Context.md) changed Tasks 6, 10 and 11; the issues carry the current acceptance criteria.
+
 ## Global Constraints
 
 Everything in md-files/Plan.md "Global Constraints" applies. In addition:
@@ -62,10 +83,10 @@ Everything in md-files/Plan.md "Global Constraints" applies. In addition:
 **Files:** `worker/src/index.ts` (`POST /api/signal`), `worker/src/order/signal.ts`, `components/order/Exits.tsx`, `components/order/Order.tsx`.
 **Behaviour:**
 - **None:** "No story on this yet" plus the closest documented work (top retrieved chunk), labelled "Related, not the same".
-- **Every result:** "Did this answer it?" Yes / No; source links; "Ask for an interview" as a `mailto:` pre-filled with the conversation (needs `contact.email` in the profile, an owner step).
+- **Every result:** "Did this answer it?" Yes / No; source links; "Ask for an interview" opens LinkedIn and copies a conversation summary (decision #34; needs `contact.linkedin`, an owner step).
 - **Yes:** offers the receipt PDF and CV.
 - **No:** opens the pre-filled request with "What was missing?".
-**Interfaces:** `POST /api/signal { conversationId, turnId, type: 'yes'|'no'|'opened-source'|'receipt'|'interview' }` → 204; max 20 signals per conversation.
+**Interfaces:** `POST /api/signal { conversationId, turnId, type: 'yes'|'no'|'opened-source'|'receipt'|'interview' }` → 204; max 20 signals per conversation; `turnId` must be a stored turn of that conversation; per-IP-hash rate limit (decision #36).
 **Tests:** e2e for each exit; signal endpoint validation and the cap.
 **Blocked by:** Task 4.
 
@@ -98,7 +119,7 @@ Everything in md-files/Plan.md "Global Constraints" applies. In addition:
 **Blocked by:** Task 4, Task 6, Task 8.
 
 ### Task 10: Conversation simulator and held-out set (M5.2)
-**Files:** `evals/personas/*.json` (recruiter, hiring manager, reference, in a hurry, sceptical), `evals/conversations/{train,heldout}/*.json` (≥ 200 multi-turn conversations, 80/20 split, written by Claude, reviewed by the owner), `evals/simulate.ts` (replays them against a URL; scores with `scoreTurn` plus over-claim checks), `.github/workflows/evals.yml` (heldout on PRs touching `worker/src/order/**`).
+**Files:** `evals/personas/*.json` (recruiter, hiring manager, reference, in a hurry, sceptical), `evals/conversations/{train,heldout}/*.json` (≥ 200 multi-turn conversations, 80/20 split, written by Claude, reviewed by the owner), `evals/simulate.ts` (replays them against a local Worker with the test Turnstile secret, ≤ 2,000 Neurons per run (decision #36); scores with `scoreTurn` plus over-claim checks), `.github/workflows/evals.yml` (heldout on PRs touching `worker/src/order/**`).
 **Tests:** `evals/simulate.test.ts` for the scorer; a dry-run mode needing no AI.
 **Blocked by:** Task 5, Task 9.
 
@@ -106,7 +127,7 @@ Everything in md-files/Plan.md "Global Constraints" applies. In addition:
 **Files:**
 - `worker/src/order/weights.ts`: `chunk_weights`, a bounded bandit with decay, applied inside `retrieveHybrid`;
 - `lib/order/followups.ts`;
-- `.github/workflows/gap-report.yml`: a weekly cron that queries D1 with wrangler and opens a GitHub issue "Gap report <week>" listing demerited questions grouped by theme. It uses the existing tokens, so no new secret is needed.
+- `.github/workflows/gap-report.yml`: a weekly cron that queries D1 with wrangler and opens a GitHub issue "Gap report <week>" with themes, counts and weak evidence ids only, never visitor text (decision #33); raw questions are read locally. It uses the existing tokens, so no new secret is needed.
 **Tests:** weights stay in [0.5, 2.0]; one conversation moves a weight by at most 0.05 (Review Focus 3); the gap report on fixture rows.
 **Blocked by:** Task 9.
 
