@@ -91,6 +91,7 @@ async function main() {
   const out = 'worker/generated';
   mkdirSync(out, { recursive: true });
   writeFileSync(`${out}/search-index.json`, buildSearchIndex(chunks));
+  writeFileSync(`${out}/chunks.json`, JSON.stringify(chunks.map(({ id, text }) => ({ id, text }))));
   writeFileSync(`${out}/profile.json`, JSON.stringify(stripMeta(profile)));
   writeFileSync(`${out}/house-menu.json`, JSON.stringify(stripMeta(houseMenu)));
   console.log(`search index: ${chunks.length} chunks from ${docs.length} documents → ${out}/`);

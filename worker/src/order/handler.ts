@@ -4,6 +4,7 @@ import type { HouseMenu, Profile } from '../../../lib/content/schema';
 import houseMenuJson from '../../generated/house-menu.json';
 import profileJson from '../../generated/profile.json';
 import searchIndexJson from '../../generated/search-index.json';
+import vectorsJson from '../../generated/vectors.json';
 import { history, recordTurn } from '../db/turns';
 import type { Env } from '../index';
 import { readBodyLimited } from './body';
@@ -13,7 +14,7 @@ import { checkRate, DAILY_AI_CAP, ipKey, takeBudget, utcDay } from './limits';
 import { callModel } from './model';
 import { buildMessages } from './prompt';
 import { parseOrderRequest } from './request';
-import { retrieve } from './retrieve';
+import { retrieve, retrieveHybrid, type Vectors } from './retrieve';
 import { screenInput } from './screen';
 import { verifyTurnstile } from './turnstile';
 import type { Answered, HouseMenuReason, OrderResult } from './types';
@@ -23,6 +24,7 @@ import { logUnknown } from './unknown';
 const profile = profileJson as Profile;
 const menu = houseMenuJson as HouseMenu;
 const searchIndex = searchIndexJson as unknown as AsPlainObject;
+const vectors = vectorsJson as Vectors;
 
 const houseMenu = (reason: HouseMenuReason): OrderResult => ({ kind: 'house-menu', reason, menu });
 
@@ -84,13 +86,16 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, co
   // kill switch
   if (c.env.ORDER_ENABLED !== 'true') return c.json(houseMenu('disabled'));
 
-  // 7 retrieve first: it's local and free, so an order nothing matches never spends budget
-  const chunks = retrieve(searchIndex, text);
-  if (chunks.length === 0) return nothingSupports(c, text, now, answer);
+  // 7 keyword retrieval first: it's local and free, so with no vectors an order nothing matches never spends budget
+  if (Object.keys(vectors).length === 0 && retrieve(searchIndex, text).length === 0) return nothingSupports(c, text, now, answer);
 
-  // 6 daily AI budget
+  // 6 daily AI budget. One slot covers the query embedding (under 1 Neuron) and the model call.
   const cap = Number(c.env.AI_DAILY_CAP ?? DAILY_AI_CAP);
   if (!(await takeBudget(c.env.DB, now, Number.isInteger(cap) && cap >= 0 ? cap : DAILY_AI_CAP))) return c.json(houseMenu('budget'));
+
+  // 7b hybrid retrieval: keywords plus meaning; any embeddings failure falls back to keywords
+  const chunks = await retrieveHybrid(searchIndex, vectors, c.env.AI, text);
+  if (chunks.length === 0) return nothingSupports(c, text, now, answer);
 
   // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
   const past = conversationId ? await history(c.env.DB, conversationId) : [];
