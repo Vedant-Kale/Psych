@@ -1,0 +1,75 @@
+name: Gap report
+
+# Weekly: where did The Order fall short? The repo is public, so the issue holds themes, counts and evidence ids only.
+# The raw orders are read into this runner's memory and files, never printed, and never leave it.
+on:
+  schedule:
+    - cron: '0 22 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: gap-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: report (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: production
+            db: psych
+            flag: ''
+          - env: staging
+            db: psych-staging
+            flag: '--env staging'
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Skip until Cloudflare secrets exist
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::notice::CLOUDFLARE_API_TOKEN not set; gap report skipped"
+      - if: env.CLOUDFLARE_API_TOKEN != ''
+        uses: actions/checkout@v7
+      - if: env.CLOUDFLARE_API_TOKEN != ''
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: env.CLOUDFLARE_API_TOKEN != ''
+        run: npm ci
+      - name: Read the last 7 days (files stay on the runner; nothing is printed)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        env:
+          DB: ${{ matrix.db }}
+          FLAG: ${{ matrix.flag }}
+        run: |
+          SINCE_MS=$(( ($(date +%s) - 7 * 86400) * 1000 ))
+          SINCE_DAY=$(date -u -d '7 days ago' +%F)
+          # shellcheck disable=SC2086
+          npx wrangler d1 execute "$DB" --remote $FLAG --json \
+            --command "SELECT text, score, chunk_ids FROM turns WHERE created_at >= $SINCE_MS" \
+            > "$RUNNER_TEMP/turns.json" 2> "$RUNNER_TEMP/turns.err" || { echo "::error::could not read turns"; exit 1; }
+          # shellcheck disable=SC2086
+          npx wrangler d1 execute "$DB" --remote $FLAG --json \
+            --command "SELECT SUM(turns) AS turns, SUM(followups) AS followups, SUM(reworded) AS reworded, SUM(deeper) AS deeper, SUM(new_topic) AS new_topic, SUM(yes) AS yes, SUM(no) AS no FROM daily_outcomes WHERE day >= '$SINCE_DAY'" \
+            > "$RUNNER_TEMP/outcomes.json" 2> "$RUNNER_TEMP/outcomes.err" || { echo "::error::could not read outcomes"; exit 1; }
+      - name: Open the issue
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        env:
+          ENV_NAME: ${{ matrix.env }}
+        run: |
+          TITLE="Gap report $(date -u +%G-W%V) ($ENV_NAME)"
+          if [ "$(gh issue list --state all --search "\"$TITLE\" in:title" --json title -q "[.[] | select(.title == \"$TITLE\")] | length")" != "0" ]; then
+            echo "::notice::$TITLE already exists"; exit 0
+          fi
+          node scripts/gap-report.ts report "$RUNNER_TEMP/turns.json" "$RUNNER_TEMP/outcomes.json" > "$RUNNER_TEMP/body.md"
+          gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/body.md"
