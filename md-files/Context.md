@@ -64,6 +64,10 @@ Companion files: [Design](Design.md) · [Architecture](Architecture.md) · [Tech
 | 30 | 11-25 | Store **full order text for 30 days** (no IP, no account) for learning and the gap report | APPROVED | Richer gap reports |
 | 31 | 11-25 | **Train before launch:** simulator with personas + held-out set + private staging beta (10–20 people); the AI goes back on only when launch gates pass | APPROVED | Portfolio traffic is too low to learn live first |
 | 32 | 11-25 | AI switched **off** in production until the launch gates pass (#55) | APPROVED | Over-claims seen in the live test |
+| 33 | 11-25 | The weekly **gap report** issue shows themes, counts and weak evidence ids only; raw question text is read locally from D1 | APPROVED | The repo is public; visitor text must never be published |
+| 34 | 11-25 | "Ask for an interview" opens **LinkedIn** and copies a conversation summary; no email on the site | APPROVED | Avoids scraper spam |
+| 35 | 11-25 | Staging-learned weights reach production by **export → owner review in a PR → commit**; production keeps learning within the same bounds | APPROVED | Staging and production D1 are separate |
+| 36 | 11-25 | Signals must name a stored turn of their conversation and are rate-limited per IP hash; the simulator runs on a local Worker, never via a staging Turnstile bypass | APPROVED | Stops weight steering and protects the free AI quota |
 
 ## 5. Open items
 

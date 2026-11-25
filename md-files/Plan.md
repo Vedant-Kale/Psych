@@ -318,4 +318,4 @@ type OrderResult =
 
 Write `md-files/plans/M3-one-night.md` using the M0 results, then M4–M8 in order. Each detailed plan keeps this file's Global Constraints.
 
-Order v2 (M5.1, M5.2): `md-files/plans/order-v2.md`. It runs before M3; the AI stays off in production until its launch gates pass.
+Order v2 (M5.1, M5.2): `md-files/plans/order-v2.md`, tickets #59–#71. It runs before M3; the AI stays off in production until its launch gates pass. Writing the M3 plan (#19) is gated only by the spikes, so it can run in parallel.

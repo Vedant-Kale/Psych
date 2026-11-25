@@ -78,6 +78,6 @@ gh pr merge --squash --delete-branch
 
 ## Order of work
 
-Tickets are GitHub issues labelled `ready-for-agent`. Work the **frontier**: any ticket whose blockers are all closed. Spikes (01–04) run alongside the foundation (05–10); The Order backend (11–16) follows ticket 09.
+Tickets are GitHub issues labelled `ready-for-agent`. Work the **frontier**: any ticket whose blockers are all closed. Spikes (01–04) run alongside the foundation (05–10); The Order backend (11–16) follows ticket 09. Order v2 (#59–#71) starts with #59, #60 and #61, which have no blockers.
 
 The one exception to "PR for everything" was the bootstrap commit that created this repo: branch protection needs a `main` branch to protect.
