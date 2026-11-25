@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { purgeOld } from './db/purge';
-import { handleOrder } from './order/handler';
+import { baseWeights, handleOrder } from './order/handler';
 import { handleSignal } from './order/signal';
+import { decayWeights } from './order/weights';
 
 export type Env = {
   ORDER_ENABLED: string;
@@ -41,8 +42,8 @@ app.post('/signal', handleSignal);
 
 export default {
   fetch: app.fetch,
-  /** Daily retention purge (cron in wrangler.jsonc). */
+  /** Daily: retention purge and weight decay (cron in wrangler.jsonc). */
   scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(purgeOld(env.DB, Date.now()));
+    ctx.waitUntil(Promise.all([purgeOld(env.DB, Date.now()), decayWeights(env.DB, baseWeights, Date.now())]));
   },
 } satisfies ExportedHandler<Env>;

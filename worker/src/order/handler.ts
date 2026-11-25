@@ -5,6 +5,7 @@ import houseMenuJson from '../../generated/house-menu.json';
 import profileJson from '../../generated/profile.json';
 import searchIndexJson from '../../generated/search-index.json';
 import vectorsJson from '../../generated/vectors.json';
+import baseWeightsJson from '../../weights/base.json';
 import { bump } from '../db/outcomes';
 import { history, recordTurn } from '../db/turns';
 import type { Env } from '../index';
@@ -14,6 +15,7 @@ import { answerFromProfile } from './facts';
 import { checkRate, DAILY_AI_CAP, ipKey, takeBudget, utcDay } from './limits';
 import { scoreFollowUp } from './followup';
 import { callModel } from './model';
+import { loadWeights, type Weights } from './weights';
 import { buildMessages } from './prompt';
 import { parseOrderRequest } from './request';
 import { retrieve, retrieveHybrid, type Vectors } from './retrieve';
@@ -27,6 +29,8 @@ const profile = profileJson as Profile;
 const menu = houseMenuJson as HouseMenu;
 const searchIndex = searchIndexJson as unknown as AsPlainObject;
 const vectors = vectorsJson as Vectors;
+/** Reviewed in a PR (npm run weights:export), then shipped: production starts from what the staging beta learned. */
+export const baseWeights = baseWeightsJson as Weights;
 
 const houseMenu = (reason: HouseMenuReason): OrderResult => ({ kind: 'house-menu', reason, menu });
 
@@ -63,12 +67,12 @@ export async function handleOrder(c: Context<{ Bindings: Env }>) {
 async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, conversationId?: string) {
   const now = Date.now();
 
-  const query: { queryVector?: number[] } = {}; // filled by hybrid retrieval when embeddings work
+  const query: { queryVector?: number[]; weights?: Weights } = {}; // weights in, the order's embedding out (when embeddings work)
 
   /** Answers, and keeps the turn (full text, 30 days) when the visitor sent a conversation id. House-menu answers aren't kept: nothing was answered. */
   const answer = async (result: OrderResult, chunkIds: string[] = []) => {
     if (conversationId && result.kind !== 'house-menu') {
-      await scoreFollowUp(c.env.DB, now, conversationId, text, query.queryVector, searchIndex, vectors);
+      await scoreFollowUp(c.env.DB, now, conversationId, text, query.queryVector, searchIndex, vectors, baseWeights);
       const turnId = await recordTurn(c.env.DB, { conversationId, text: text.trim(), kind: result.kind, chunkIds, now, vector: query.queryVector });
       await bump(c.env.DB, now, 'turns');
       return c.json<Answered>({ ...result, turnId });
@@ -100,6 +104,7 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, co
   if (!(await takeBudget(c.env.DB, now, Number.isInteger(cap) && cap >= 0 ? cap : DAILY_AI_CAP))) return c.json(houseMenu('budget'));
 
   // 7b hybrid retrieval: keywords plus meaning; any embeddings failure falls back to keywords
+  query.weights = await loadWeights(c.env.DB, baseWeights);
   const chunks = await retrieveHybrid(searchIndex, vectors, c.env.AI, text, 6, undefined, query);
   if (chunks.length === 0) return nothingSupports(c, text, now, answer);
 

@@ -10,6 +10,7 @@ export async function purgeOld(db: D1Database, now: number, days = RETENTION_DAY
     db.prepare('DELETE FROM rate_limits WHERE ts < ?').bind(cutoff),
     db.prepare('DELETE FROM turns WHERE created_at < ?').bind(cutoff),
     db.prepare('DELETE FROM signals WHERE created_at < ?').bind(cutoff),
+    db.prepare('DELETE FROM weight_moves WHERE created_at < ?').bind(cutoff),
     db.prepare('DELETE FROM ai_budget WHERE day < ?').bind(utcDay(cutoff)),
   ]);
   return results.reduce((n, r) => n + (r.meta.changes ?? 0), 0);

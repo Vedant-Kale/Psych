@@ -1,5 +1,6 @@
 import MiniSearch, { type AsPlainObject } from 'minisearch';
 import { searchOptions, type Chunk } from '../../../lib/search/types';
+import { clampWeight, type Weights } from './weights';
 
 const cache = new WeakMap<AsPlainObject, MiniSearch<Chunk>>();
 
@@ -73,14 +74,14 @@ export async function retrieveHybrid(
   text: string,
   k = 6,
   timeoutMs = EMBED_TIMEOUT_MS,
-  /** Receives the order's embedding when there is one, so scoring can reuse it instead of calling the model again. */
-  embedding?: { queryVector?: number[] },
+  /** `weights` re-rank what was found (never add to it); `queryVector` receives the order's embedding so scoring can reuse it. */
+  extra?: { queryVector?: number[]; weights?: Weights },
 ): Promise<Chunk[]> {
   const keyword = retrieve(index, text, k * 2);
   const first = Object.values(vectors)[0];
   const query = first ? await embedQuery(ai, text, first.length, timeoutMs) : null;
 
-  if (query && embedding) embedding.queryVector = query;
+  if (query && extra) extra.queryVector = query;
   const byId = new Map(keyword.map((c) => [c.id, c]));
   const score = new Map<string, number>();
   const add = (id: string, rank: number) => score.set(id, (score.get(id) ?? 0) + 1 / (RRF_K + rank));
@@ -104,7 +105,8 @@ export async function retrieveHybrid(
 
   const perSource = new Map<string, number>();
   const out: Chunk[] = [];
-  for (const [id] of [...score].sort((a, b) => b[1] - a[1])) {
+  const weighted = [...score].map(([id, s]) => [id, s * clampWeight(extra?.weights?.[id] ?? 1)] as const);
+  for (const [id] of weighted.sort((a, b) => b[1] - a[1])) {
     const c = byId.get(id)!;
     if ((perSource.get(c.sourceId) ?? 0) >= MAX_PER_SOURCE) continue;
     perSource.set(c.sourceId, (perSource.get(c.sourceId) ?? 0) + 1);
