@@ -26,11 +26,17 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Your order is answered by Cloudflare Workers AI</strong> from excerpts of this site&apos;s own posts
-          and projects. Cloudflare doesn&apos;t use it to train AI models. Answered orders aren&apos;t stored.
+          and projects. Cloudflare doesn&apos;t use it to train AI models.
         </li>
         <li>
-          <strong>Orders nothing here can answer</strong> are kept as text only, with no IP address or account, for 30
-          days so the owner can write about them, then deleted.
+          <strong>The full text of your orders</strong> is kept for 30 days, then deleted, so the owner can see which
+          questions the site answers badly and improve it. It is stored with a random conversation number, never with
+          your IP address or an account. The number is made in your browser tab, kept in that tab&apos;s session
+          storage (not a cookie), and forgotten when you close the tab.
+        </li>
+        <li>
+          <strong>A conversation remembers your last three orders</strong>, so a follow-up question makes sense. They
+          are sent to Workers AI as part of your next order.
         </li>
         <li>
           <strong>Rate-limit counters</strong> keep a one-way hash of your IP address mixed with a daily secret, never

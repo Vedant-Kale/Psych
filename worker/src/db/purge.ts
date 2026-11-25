@@ -8,6 +8,8 @@ export async function purgeOld(db: D1Database, now: number, days = RETENTION_DAY
   const results = await db.batch([
     db.prepare('DELETE FROM unknown_questions WHERE created_at < ?').bind(cutoff),
     db.prepare('DELETE FROM rate_limits WHERE ts < ?').bind(cutoff),
+    db.prepare('DELETE FROM turns WHERE created_at < ?').bind(cutoff),
+    db.prepare('DELETE FROM signals WHERE created_at < ?').bind(cutoff),
     db.prepare('DELETE FROM ai_budget WHERE day < ?').bind(utcDay(cutoff)),
   ]);
   return results.reduce((n, r) => n + (r.meta.changes ?? 0), 0);

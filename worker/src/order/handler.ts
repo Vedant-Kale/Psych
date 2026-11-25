@@ -4,6 +4,7 @@ import type { HouseMenu, Profile } from '../../../lib/content/schema';
 import houseMenuJson from '../../generated/house-menu.json';
 import profileJson from '../../generated/profile.json';
 import searchIndexJson from '../../generated/search-index.json';
+import { history, recordTurn } from '../db/turns';
 import type { Env } from '../index';
 import { readBodyLimited } from './body';
 import { enforceCitations } from './citations';
@@ -48,15 +49,23 @@ export async function handleOrder(c: Context<{ Bindings: Env }>) {
   }
 
   try {
-    return await serve(c, parsed.text, ip);
+    return await serve(c, parsed.text, ip, parsed.conversationId);
   } catch {
     // D1 or any later failure: the visitor still gets something useful, never a 500.
     return c.json(houseMenu('ai-error'));
   }
 }
 
-async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
+async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, conversationId?: string) {
   const now = Date.now();
+
+  /** Answers, and keeps the turn (full text, 30 days) when the visitor sent a conversation id. House-menu answers aren't kept: nothing was answered. */
+  const answer = async (result: OrderResult, chunkIds: string[] = []) => {
+    if (conversationId && result.kind !== 'house-menu') {
+      await recordTurn(c.env.DB, { conversationId, text: text.trim(), kind: result.kind, chunkIds, now });
+    }
+    return c.json<OrderResult>(result);
+  };
 
   // 3 rate limit. Without the salt an IP hash is guessable, so fail closed and store nothing.
   if (!c.env.IP_SALT_SECRET) return c.json(houseMenu('disabled'));
@@ -69,28 +78,30 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string) {
 
   // 5 facts (no AI, no budget)
   const fact = answerFromProfile(text, profile);
-  if (fact) return c.json<OrderResult>({ kind: 'fact', ...fact });
+  if (fact) return answer({ kind: 'fact', ...fact });
 
   // kill switch
   if (c.env.ORDER_ENABLED !== 'true') return c.json(houseMenu('disabled'));
 
   // 7 retrieve first: it's local and free, so an order nothing matches never spends budget
   const chunks = retrieve(searchIndex, text);
-  if (chunks.length === 0) return nothingSupports(c, text, now);
+  if (chunks.length === 0) return nothingSupports(c, text, now, answer);
 
   // 6 daily AI budget
   const cap = Number(c.env.AI_DAILY_CAP ?? DAILY_AI_CAP);
   if (!(await takeBudget(c.env.DB, now, Number.isInteger(cap) && cap >= 0 ? cap : DAILY_AI_CAP))) return c.json(houseMenu('budget'));
 
   // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
-  const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks));
+  const past = conversationId ? await history(c.env.DB, conversationId) : [];
+  const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks, past));
   const layers = enforceCitations(raw, chunks);
-  if (layers.length === 0) return nothingSupports(c, text, now);
-  return c.json<OrderResult>({ kind: 'mix', layers });
+  const chunkIds = chunks.map((k) => k.id);
+  if (layers.length === 0) return nothingSupports(c, text, now, (r) => answer(r, chunkIds));
+  return answer({ kind: 'mix', layers }, chunkIds);
 }
 
 /** Step 10: an honest "no", and the order is kept (text only) so it can become a future post. */
-async function nothingSupports(c: Context<{ Bindings: Env }>, text: string, now: number) {
+async function nothingSupports(c: Context<{ Bindings: Env }>, text: string, now: number, answer: (r: OrderResult) => Promise<Response>) {
   await logUnknown(c.env.DB, text, now);
-  return c.json<OrderResult>({ kind: 'none', message: NOTHING_SUPPORTS });
+  return answer({ kind: 'none', message: NOTHING_SUPPORTS });
 }
