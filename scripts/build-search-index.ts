@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import MiniSearch from 'minisearch';
+import type { Profile } from '../lib/content/schema.ts';
 import { searchOptions, type Chunk } from '../lib/search/types.ts';
 
 /** Markdown to readable text: keeps words and link text, drops syntax. */
@@ -52,6 +53,16 @@ export function chunkDocument(slug: string, title: string, body: string, maxChar
   return texts.map((text, n) => ({ id: `${slug}#${n}`, sourceId: slug, title, text }));
 }
 
+/** Roles, education and skills as citable evidence: one plain sentence each, linked to /facts/ via sourceId `profile`. */
+export function profileChunks(profile: Profile): Chunk[] {
+  const texts = [
+    ...profile.roles.map((r) => `Worked in ${r.kind}: ${r.title}.`),
+    ...profile.education.map((e) => `Studying ${e.degree} at ${e.institution} (${e.status}).`),
+    ...profile.skills.map((k) => `Skill: ${k.name}.`),
+  ];
+  return texts.map((text, n) => ({ id: `profile#${n}`, sourceId: 'profile', title: 'Facts', text }));
+}
+
 export function buildSearchIndex(chunks: Chunk[]): string {
   const index = new MiniSearch<Chunk>(searchOptions);
   index.addAll(chunks);
@@ -72,10 +83,10 @@ async function main() {
     ...allProjects.map((p) => ({ slug: p.slug, title: p.title, body: `${p.summary}\n\n${p.content}` })),
     ...allPosts.map((p) => ({ slug: p.slug, title: p.title, body: `${p.summary}\n\n${p.content}` })),
   ];
-  const chunks = docs.flatMap((d) => chunkDocument(d.slug, d.title, toPlainText(d.body)));
   const [profile] = allProfiles;
   const [houseMenu] = allHouseMenus;
   if (!profile || !houseMenu) throw new Error('content/profile.yaml and content/house-menu.yaml are required');
+  const chunks = [...docs.flatMap((d) => chunkDocument(d.slug, d.title, toPlainText(d.body))), ...profileChunks(profile)];
 
   const out = 'worker/generated';
   mkdirSync(out, { recursive: true });

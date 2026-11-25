@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import MiniSearch from 'minisearch';
 import { describe, expect, it } from 'vitest';
 import { searchOptions, type Chunk } from '../lib/search/types.ts';
-import { buildSearchIndex, chunkDocument, toPlainText } from './build-search-index.ts';
+import type { Profile } from '../lib/content/schema.ts';
+import { buildSearchIndex, chunkDocument, profileChunks, toPlainText } from './build-search-index.ts';
 
 const para = (n: number, word = 'word') => Array.from({ length: n }, () => word).join(' ');
 
@@ -44,6 +45,38 @@ describe('chunkDocument', () => {
 describe('toPlainText', () => {
   it('drops markdown syntax but keeps link text', () => {
     expect(toPlainText('## Head\n\n**bold** and [a link](https://x.test) `code`')).toBe('Head\n\nbold and a link code');
+  });
+});
+
+describe('profileChunks', () => {
+  const profile: Profile = {
+    name: 'Test',
+    headline: 'h',
+    location: 'l',
+    education: [{ degree: 'Master of AI', institution: 'RMIT University', status: 'in progress' }],
+    roles: [
+      { title: 'Bartending', kind: 'hospitality' },
+      { title: 'Ushering at stadiums', kind: 'events' },
+    ],
+    skills: [{ name: 'Row-level security in Postgres', evidence: ['expense-track'] }],
+    contact: { github: 'https://github.com/x' },
+  };
+
+  it('every role, education entry and skill is its own profile chunk, citable as profile#n', () => {
+    const chunks = profileChunks(profile);
+    expect(chunks.map((c) => c.id)).toEqual(['profile#0', 'profile#1', 'profile#2', 'profile#3']);
+    expect(chunks.every((c) => c.sourceId === 'profile')).toBe(true);
+    expect(chunks.map((c) => c.text)).toEqual([
+      'Worked in hospitality: Bartending.',
+      'Worked in events: Ushering at stadiums.',
+      'Studying Master of AI at RMIT University (in progress).',
+      'Skill: Row-level security in Postgres.',
+    ]);
+  });
+
+  it('a search for customer-facing work finds a role chunk', () => {
+    const index = MiniSearch.loadJSON<Chunk>(buildSearchIndex(profileChunks(profile)), searchOptions);
+    expect(index.search('bartending hospitality')[0]?.id).toBe('profile#0');
   });
 });
 
