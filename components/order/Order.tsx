@@ -26,6 +26,7 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
   const inFlight = useRef(false); // state updates are async; this stops a double click sending twice
   const heading = useRef<HTMLHeadingElement>(null);
   const resultBox = useRef<HTMLElement>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
   const sent = useRef(new Set<string>()); // one signal of each type per answer, however often it is clicked
   const ids = { hint: useId(), count: useId(), status: useId() };
 
@@ -90,6 +91,7 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
         </p>
         <textarea
           id="order-text"
+          ref={box}
           className="order-text"
           rows={3}
           minLength={3}
@@ -140,6 +142,11 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
                 key={turnId}
                 kind={result.kind}
                 closest={result.kind === 'none' ? result.closest : undefined}
+                cited={citedIds(result)}
+                onPick={(idea) => {
+                  setText(idea);
+                  box.current?.focus();
+                }}
                 ordered={ordered}
                 profile={profile}
                 sources={sources}
@@ -212,4 +219,11 @@ function Result({
         </>
       );
   }
+}
+
+/** The evidence ids an answer used. */
+function citedIds(r: Extract<OrderResponse, { kind: 'mix' | 'fact' | 'none' }>): string[] {
+  if (r.kind === 'mix') return r.layers.flatMap((l) => l.evidenceIds);
+  if (r.kind === 'fact') return r.sourceIds;
+  return r.closest ? [r.closest] : [];
 }

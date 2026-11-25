@@ -43,6 +43,7 @@ export const exitCopy = {
   interview: 'Ask for an interview',
   copied: 'Your summary is copied. Paste it into your message.',
   related: 'Related, not the same',
+  askNext: 'Ask next',
 } as const;
 
 export const turnstileBlocked =

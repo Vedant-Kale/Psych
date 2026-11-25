@@ -301,3 +301,21 @@ test('the exits have no axe violations and work by keyboard', async ({ page }) =
   await page.keyboard.press('Enter');
   await expect(page.getByText(/glad it helped/i)).toBeVisible();
 });
+
+test('suggests asking about work the answer did not use; a suggestion fills the order box', async ({ page }) => {
+  await withSignals(page, mixTurn); // cites expense-track only
+  await order(page);
+  const chips = page.getByRole('button', { name: /^Tell me about / });
+  await expect(chips).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /expense-track/ })).toHaveCount(0);
+  const text = (await chips.first().textContent())!;
+  await chips.first().click();
+  await expect(page.getByLabel('Your order')).toHaveValue(text);
+  await expect(page.getByLabel('Your order')).toBeFocused();
+});
+
+test('a profile-only answer suggests the documented work, two at most', async ({ page }) => {
+  await withSignals(page, { kind: 'fact', answer: 'Master of AI at RMIT.', sourceIds: ['profile'], turnId: 3 });
+  await order(page);
+  await expect(page.getByRole('button', { name: /^Tell me about / })).toHaveCount(2);
+});

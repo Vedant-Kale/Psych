@@ -78,6 +78,7 @@ h2 { font-family: Georgia, serif; font-size: 1.4rem; margin: 2.5rem 0 0.75rem; }
 .order-result h2:focus-visible { outline: 2px solid var(--amber); outline-offset: 4px; }
 .exits { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #2a2620; }
 .exits-question { font-family: Georgia, serif; font-size: 1.125rem; margin: 0.5rem 0; }
+.exits-chips { list-style: none; display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 0; margin: 0.25rem 0 0; }
 .exits label { display: block; margin: 0.75rem 0 0.25rem; }
 .order-layers { list-style: none; padding: 0; margin: 1rem 0 0; }
 .order-layers > li { padding: 0.25rem 0 0.25rem 1rem; margin-bottom: 1.25rem; border-left: 3px solid var(--amber); }

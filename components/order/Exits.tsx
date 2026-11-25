@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import type { Profile } from '@/lib/content/schema';
 import type { SignalType } from '@/lib/order/client';
 import { interviewLink } from '@/lib/order/interview';
+import { followUps } from '@/lib/order/followups';
 import { exitCopy } from './copy';
 import { SourceLinks, type Sources } from './SourceLinks';
 
@@ -9,6 +10,8 @@ import { SourceLinks, type Sources } from './SourceLinks';
 export function Exits({
   kind,
   closest,
+  cited,
+  onPick,
   ordered,
   profile,
   sources,
@@ -16,6 +19,9 @@ export function Exits({
 }: {
   kind: 'mix' | 'fact' | 'none';
   closest?: string;
+  /** Evidence ids the answer used, so suggestions point at work it did not. */
+  cited: string[];
+  onPick: (order: string) => void;
   ordered: string;
   profile: Profile;
   sources: Sources;
@@ -71,6 +77,7 @@ export function Exits({
           <textarea id={ids.missing} className="order-text" rows={2} maxLength={300} value={missing} onChange={(e) => setMissing(e.target.value)} />
         </>
       )}
+      <FollowUpChips cited={cited} sources={sources} onPick={onPick} />
       {interview && (
         <div className="order-actions">
           <button type="button" className="order-button" onClick={() => void askForInterview()}>
@@ -80,5 +87,24 @@ export function Exits({
         </div>
       )}
     </section>
+  );
+}
+
+function FollowUpChips({ cited, sources, onPick }: { cited: string[]; sources: Sources; onPick: (order: string) => void }) {
+  const ideas = followUps(cited, sources);
+  if (ideas.length === 0) return null;
+  return (
+    <div className="exits-next">
+      <p className="meta">{exitCopy.askNext}</p>
+      <ul className="exits-chips">
+        {ideas.map((idea) => (
+          <li key={idea}>
+            <button type="button" className="order-button" onClick={() => onPick(idea)}>
+              {idea}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

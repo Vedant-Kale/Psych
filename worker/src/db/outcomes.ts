@@ -32,3 +32,9 @@ export async function scoreSignal(db: D1Database, turnId: number, next: (score: 
   const r = await db.prepare('SELECT score FROM turns WHERE id = ?').bind(turnId).first<{ score: number }>();
   if (r) await setScore(db, turnId, next(r.score));
 }
+
+/** The evidence ids that answered a stored turn. */
+export async function chunkIdsOf(db: D1Database, turnId: number): Promise<string[]> {
+  const r = await db.prepare('SELECT chunk_ids FROM turns WHERE id = ?').bind(turnId).first<{ chunk_ids: string }>();
+  return r ? (JSON.parse(r.chunk_ids) as string[]) : [];
+}
