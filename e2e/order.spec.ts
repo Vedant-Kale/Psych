@@ -185,3 +185,27 @@ test('the receipt names the same site as the sitemap', async ({ page, request })
   await order(page);
   await expect(page.getByRole('region', { name: 'Receipt' }).getByText(/^Mixed /)).toContainText(`${origin}/order/`);
 });
+
+test('every order in a tab carries the same conversation id, kept in sessionStorage and never in a cookie', async ({ page }) => {
+  const ids: string[] = [];
+  await page.route('**/api/order', async (r) => {
+    ids.push((r.request().postDataJSON() as { conversationId: string }).conversationId);
+    await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ kind: 'none', message: 'Nothing yet.' }) });
+  });
+  await order(page, 'first order here');
+  await expect(page.getByText('Nothing yet.')).toBeVisible();
+  const place = page.getByRole('button', { name: 'Place order' });
+  await expect(place).toBeEnabled();
+  await place.click();
+  await expect.poll(() => ids.length).toBe(2);
+  expect(ids[0]).toMatch(/^[A-Za-z0-9_-]{22,64}$/);
+  expect(ids[1]).toBe(ids[0]);
+  expect(await page.evaluate(() => sessionStorage.length)).toBe(1);
+  expect(await page.context().cookies()).toEqual([]);
+});
+
+test('the privacy page says the full text of orders is kept for 30 days', async ({ page }) => {
+  await page.goto('/privacy/');
+  await expect(page.getByRole('listitem').filter({ hasText: /full text of your orders/i })).toContainText(/30 days/);
+  await expect(page.getByRole('listitem').filter({ hasText: /last three orders/i })).toBeVisible();
+});

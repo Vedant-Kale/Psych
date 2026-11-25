@@ -6,13 +6,13 @@ export type OrderResponse = OrderResult | { kind: 'error'; reason: OrderError };
 const KINDS = new Set(['mix', 'fact', 'none', 'refused', 'house-menu']);
 
 /** POSTs an order. Never throws: every failure becomes `{ kind: 'error', reason }`, so the UI can't hang on a spinner. */
-export async function postOrder(text: string, turnstileToken: string, fetchFn: typeof fetch = fetch): Promise<OrderResponse> {
+export async function postOrder(text: string, turnstileToken: string, conversationId: string, fetchFn: typeof fetch = fetch): Promise<OrderResponse> {
   const error = (reason: OrderError) => ({ kind: 'error', reason }) as const;
   try {
     const res = await fetchFn('/api/order', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text, turnstileToken }),
+      body: JSON.stringify({ text, turnstileToken, conversationId }),
       signal: AbortSignal.timeout(20_000),
     });
     if (res.status === 403) return error('verification');

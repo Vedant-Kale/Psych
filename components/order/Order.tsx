@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Profile } from '@/lib/content/schema';
 import { postOrder, type OrderResponse } from '@/lib/order/client';
+import { conversationId } from '@/lib/order/conversation';
 import { TURNSTILE_SITE_KEY } from '@/lib/site';
 import { errorCopy, houseMenuCopy, refusalCopy, resultHeading, turnstileBlocked } from './copy';
 import { Pour } from './Pour';
@@ -34,7 +35,7 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
     inFlight.current = true;
     setPending(true);
     const sent = text.trim();
-    const r = await postOrder(sent, token);
+    const r = await postOrder(sent, token, conversationId());
     setOrdered(sent);
     setToken('');
     setResetKey((k) => k + 1);
