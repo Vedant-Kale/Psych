@@ -35,6 +35,11 @@ export default function PrivacyPage() {
           storage (not a cookie), and forgotten when you close the tab.
         </li>
         <li>
+          <strong>What you do with an answer</strong> (marking it helpful or not, opening a source, printing the
+          receipt, asking for an interview) is kept for 30 days with the same conversation number, to see which answers
+          work.
+        </li>
+        <li>
           <strong>A conversation remembers your last three orders</strong>, so a follow-up question makes sense. They
           are sent to Workers AI as part of your next order.
         </li>

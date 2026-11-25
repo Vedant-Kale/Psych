@@ -16,7 +16,7 @@ import { parseOrderRequest } from './request';
 import { retrieve } from './retrieve';
 import { screenInput } from './screen';
 import { verifyTurnstile } from './turnstile';
-import type { HouseMenuReason, OrderResult } from './types';
+import type { Answered, HouseMenuReason, OrderResult } from './types';
 import { logUnknown } from './unknown';
 
 // Validated by Zod at build time (scripts/build-search-index.ts reads only validated collections).
@@ -62,7 +62,8 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, co
   /** Answers, and keeps the turn (full text, 30 days) when the visitor sent a conversation id. House-menu answers aren't kept: nothing was answered. */
   const answer = async (result: OrderResult, chunkIds: string[] = []) => {
     if (conversationId && result.kind !== 'house-menu') {
-      await recordTurn(c.env.DB, { conversationId, text: text.trim(), kind: result.kind, chunkIds, now });
+      const turnId = await recordTurn(c.env.DB, { conversationId, text: text.trim(), kind: result.kind, chunkIds, now });
+      return c.json<Answered>({ ...result, turnId });
     }
     return c.json<OrderResult>(result);
   };
@@ -96,12 +97,18 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, co
   const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks, past));
   const layers = enforceCitations(raw, chunks);
   const chunkIds = chunks.map((k) => k.id);
-  if (layers.length === 0) return nothingSupports(c, text, now, (r) => answer(r, chunkIds));
+  if (layers.length === 0) return nothingSupports(c, text, now, (r) => answer(r, chunkIds), chunks[0]?.id);
   return answer({ kind: 'mix', layers }, chunkIds);
 }
 
 /** Step 10: an honest "no", and the order is kept (text only) so it can become a future post. */
-async function nothingSupports(c: Context<{ Bindings: Env }>, text: string, now: number, answer: (r: OrderResult) => Promise<Response>) {
+async function nothingSupports(
+  c: Context<{ Bindings: Env }>,
+  text: string,
+  now: number,
+  answer: (r: OrderResult) => Promise<Response>,
+  closest?: string,
+) {
   await logUnknown(c.env.DB, text, now);
-  return answer({ kind: 'none', message: NOTHING_SUPPORTS });
+  return answer({ kind: 'none', message: NOTHING_SUPPORTS, ...(closest ? { closest } : {}) });
 }

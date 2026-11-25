@@ -1,7 +1,7 @@
 export type ParsedOrder = { ok: true; text: string; turnstileToken: string; conversationId?: string } | { ok: false };
 
 /** Random per browser tab (a UUID is 36 chars). Too short to be unguessable, or any other character, is rejected. */
-const CONVERSATION_ID = /^[A-Za-z0-9_-]{22,64}$/;
+export const CONVERSATION_ID = /^[A-Za-z0-9_-]{22,64}$/;
 
 /** Shape check only. Length and content are judged by screenInput, so the visitor gets a polite refusal, not a 400. */
 export function parseOrderRequest(body: unknown): ParsedOrder {

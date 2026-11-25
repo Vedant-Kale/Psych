@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { purgeOld } from './db/purge';
 import { handleOrder } from './order/handler';
+import { handleSignal } from './order/signal';
 
 export type Env = {
   ORDER_ENABLED: string;
@@ -31,6 +32,12 @@ app.use('/order', async (c, next) => {
   c.header('Cache-Control', 'no-store');
 });
 app.post('/order', handleOrder);
+
+app.use('/signal', async (c, next) => {
+  await next();
+  c.header('Cache-Control', 'no-store');
+});
+app.post('/signal', handleSignal);
 
 export default {
   fetch: app.fetch,

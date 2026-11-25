@@ -18,7 +18,7 @@ export async function ipKey(ip: string, salt: string, day: string): Promise<stri
  * One INSERT … SELECT … WHERE statement, so check-and-record is atomic.
  * The key already rotates per UTC day, so every row under it counts toward the daily limit.
  */
-export async function checkRate(db: D1Database, key: string, now: number): Promise<boolean> {
+export async function checkRate(db: D1Database, key: string, now: number, burst = BURST_LIMIT, daily = DAILY_LIMIT): Promise<boolean> {
   const { meta } = await db
     .prepare(
       `INSERT INTO rate_limits (key, ts)
@@ -26,7 +26,7 @@ export async function checkRate(db: D1Database, key: string, now: number): Promi
        WHERE (SELECT COUNT(*) FROM rate_limits WHERE key = ?1 AND ts > ?2 - ?3) < ?4
          AND (SELECT COUNT(*) FROM rate_limits WHERE key = ?1) < ?5`,
     )
-    .bind(key, now, BURST_WINDOW_MS, BURST_LIMIT, DAILY_LIMIT)
+    .bind(key, now, BURST_WINDOW_MS, burst, daily)
     .run();
   return meta.changes === 1;
 }

@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { Profile } from '@/lib/content/schema';
-import { postOrder, type OrderResponse } from '@/lib/order/client';
+import { postOrder, postSignal, type OrderResponse, type SignalType } from '@/lib/order/client';
 import { conversationId } from '@/lib/order/conversation';
 import { TURNSTILE_SITE_KEY } from '@/lib/site';
 import { errorCopy, houseMenuCopy, refusalCopy, resultHeading, turnstileBlocked } from './copy';
 import { Pour } from './Pour';
 import { Receipt } from './Receipt';
+import { Exits } from './Exits';
 import { SourceLinks, type Sources } from './SourceLinks';
 import { Turnstile } from './Turnstile';
 
@@ -24,11 +25,37 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
   const [ordered, setOrdered] = useState(''); // the text as sent; the box may change afterwards
   const inFlight = useRef(false); // state updates are async; this stops a double click sending twice
   const heading = useRef<HTMLHeadingElement>(null);
+  const resultBox = useRef<HTMLElement>(null);
+  const sent = useRef(new Set<string>()); // one signal of each type per answer, however often it is clicked
   const ids = { hint: useId(), count: useId(), status: useId() };
 
   useEffect(() => {
     if (result) heading.current?.focus();
   }, [result]);
+
+  const turnId = result && 'turnId' in result ? result.turnId : undefined;
+  const signal = useCallback(
+    (type: SignalType) => {
+      if (turnId === undefined || sent.current.has(`${turnId}:${type}`)) return;
+      sent.current.add(`${turnId}:${type}`);
+      void postSignal(conversationId(), turnId, type);
+    },
+    [turnId],
+  );
+
+  // Clicks on a source link or the receipt's print button are signals too; one listener covers every result kind.
+  useEffect(() => {
+    const box = resultBox.current;
+    if (!box) return;
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const a = target.closest('a');
+      if (a && Object.values(sources).some((s) => s.href === a.getAttribute('href'))) signal('opened-source');
+      if (target.closest('.receipt-print')) signal('receipt');
+    };
+    box.addEventListener('click', onClick);
+    return () => box.removeEventListener('click', onClick);
+  }, [signal, sources]);
 
   const submit = async () => {
     if (inFlight.current || !token) return;
@@ -101,13 +128,24 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
         </div>
       </form>
 
-      <section className="order-result" aria-live="polite">
+      <section ref={resultBox} className="order-result" aria-live="polite">
         {result && (
           <>
             <h2 ref={heading} tabIndex={-1}>
               {resultHeading[result.kind]}
             </h2>
             <Result result={result} sources={sources} profile={profile} ordered={ordered} onRetry={() => void submit()} canRetry={!!token && !pending} />
+            {turnId !== undefined && (result.kind === 'mix' || result.kind === 'fact' || result.kind === 'none') && (
+              <Exits
+                key={turnId}
+                kind={result.kind}
+                closest={result.kind === 'none' ? result.closest : undefined}
+                ordered={ordered}
+                profile={profile}
+                sources={sources}
+                send={signal}
+              />
+            )}
           </>
         )}
       </section>
