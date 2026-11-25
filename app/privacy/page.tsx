@@ -37,7 +37,8 @@ export default function PrivacyPage() {
         <li>
           <strong>What you do with an answer</strong> (marking it helpful or not, opening a source, printing the
           receipt, asking for an interview) is kept for 30 days with the same conversation number, to see which answers
-          work.
+          work. Each answer also gets a score from what happens next. Daily totals of these counts, with no text and no
+          conversation number, are kept without a time limit.
         </li>
         <li>
           <strong>A conversation remembers your last three orders</strong>, so a follow-up question makes sense. They

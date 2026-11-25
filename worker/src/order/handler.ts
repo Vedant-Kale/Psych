@@ -5,12 +5,14 @@ import houseMenuJson from '../../generated/house-menu.json';
 import profileJson from '../../generated/profile.json';
 import searchIndexJson from '../../generated/search-index.json';
 import vectorsJson from '../../generated/vectors.json';
+import { bump } from '../db/outcomes';
 import { history, recordTurn } from '../db/turns';
 import type { Env } from '../index';
 import { readBodyLimited } from './body';
 import { enforceCitations } from './citations';
 import { answerFromProfile } from './facts';
 import { checkRate, DAILY_AI_CAP, ipKey, takeBudget, utcDay } from './limits';
+import { scoreFollowUp } from './followup';
 import { callModel } from './model';
 import { buildMessages } from './prompt';
 import { parseOrderRequest } from './request';
@@ -61,10 +63,14 @@ export async function handleOrder(c: Context<{ Bindings: Env }>) {
 async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, conversationId?: string) {
   const now = Date.now();
 
+  const query: { queryVector?: number[] } = {}; // filled by hybrid retrieval when embeddings work
+
   /** Answers, and keeps the turn (full text, 30 days) when the visitor sent a conversation id. House-menu answers aren't kept: nothing was answered. */
   const answer = async (result: OrderResult, chunkIds: string[] = []) => {
     if (conversationId && result.kind !== 'house-menu') {
-      const turnId = await recordTurn(c.env.DB, { conversationId, text: text.trim(), kind: result.kind, chunkIds, now });
+      await scoreFollowUp(c.env.DB, now, conversationId, text, query.queryVector, searchIndex, vectors);
+      const turnId = await recordTurn(c.env.DB, { conversationId, text: text.trim(), kind: result.kind, chunkIds, now, vector: query.queryVector });
+      await bump(c.env.DB, now, 'turns');
       return c.json<Answered>({ ...result, turnId });
     }
     return c.json<OrderResult>(result);
@@ -94,7 +100,7 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, co
   if (!(await takeBudget(c.env.DB, now, Number.isInteger(cap) && cap >= 0 ? cap : DAILY_AI_CAP))) return c.json(houseMenu('budget'));
 
   // 7b hybrid retrieval: keywords plus meaning; any embeddings failure falls back to keywords
-  const chunks = await retrieveHybrid(searchIndex, vectors, c.env.AI, text);
+  const chunks = await retrieveHybrid(searchIndex, vectors, c.env.AI, text, 6, undefined, query);
   if (chunks.length === 0) return nothingSupports(c, text, now, answer);
 
   // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
