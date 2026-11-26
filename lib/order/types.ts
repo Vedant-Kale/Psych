@@ -8,6 +8,7 @@ export type HouseMenuReason = 'budget' | 'rate-limit' | 'ai-error' | 'disabled';
 export type OrderResult =
   | { kind: 'mix'; layers: Layer[] }
   | { kind: 'fact'; answer: string; sourceIds: string[] }
+  | { kind: 'answer'; text: string; evidenceIds: string[] }
   | { kind: 'none'; message: string; closest?: string }
   | { kind: 'refused'; reason: RefusalReason }
   | { kind: 'house-menu'; reason: HouseMenuReason; menu: HouseMenu };

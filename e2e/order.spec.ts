@@ -38,6 +38,13 @@ const cases: { name: string; status: number; body: unknown; heading: string; tex
     heading: resultHeading.mix,
     text: 'Secure multi-user data',
   },
+  {
+    name: 'answer',
+    status: 200,
+    body: { kind: 'answer', text: 'I forced row-level security on every table.', evidenceIds: ['expense-track#0'] },
+    heading: resultHeading.answer,
+    text: 'I forced row-level security on every table.',
+  },
   { name: 'fact', status: 200, body: { kind: 'fact', answer: 'Master of AI at RMIT.', sourceIds: ['profile'] }, heading: resultHeading.fact, text: 'Master of AI at RMIT.' },
   { name: 'none', status: 200, body: { kind: 'none', message: 'Nothing in my work supports that yet.' }, heading: resultHeading.none, text: 'Nothing in my work supports that yet.' },
   { name: 'refused', status: 200, body: { kind: 'refused', reason: 'injection' }, heading: resultHeading.refused, text: refusalCopy.injection },
@@ -55,7 +62,7 @@ for (const c of cases) {
 }
 
 test('mix and house menu link each source once, to its page', async ({ page }) => {
-  await api(page, 200, cases[0]!.body);
+  await api(page, 200, cases.find((c) => c.name === 'mix')!.body);
   await order(page);
   await expect(page.getByRole('link', { name: 'expense-track-agent' })).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'expense-track-agent' })).toHaveAttribute('href', '/projects/expense-track/');
@@ -212,7 +219,7 @@ test('the privacy page says the full text of orders is kept for 30 days', async 
 
 // ---- exits: every answer ends in somewhere to go, and what the visitor does is sent as a signal ----
 
-const mixTurn = { ...(cases[0]!.body as object), turnId: 7 };
+const mixTurn = { ...(cases.find((c) => c.name === 'mix')!.body as object), turnId: 7 };
 
 /** Answers /api/order with one fixed reply and collects what is posted to /api/signal. */
 async function withSignals(page: Page, body: unknown) {
@@ -284,7 +291,7 @@ test('printing the receipt sends a receipt signal', async ({ page }) => {
 });
 
 test('no exits, and no signals, when the answer was not stored (no turn id) or was a refusal', async ({ page }) => {
-  const signals = await withSignals(page, cases[0]!.body);
+  const signals = await withSignals(page, cases.find((c) => c.name === 'mix')!.body);
   await order(page);
   await expect(page.getByText('Secure multi-user data')).toBeVisible();
   await expect(page.getByText('Did this answer it?')).toHaveCount(0);

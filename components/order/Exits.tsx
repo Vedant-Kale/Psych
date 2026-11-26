@@ -17,7 +17,7 @@ export function Exits({
   sources,
   send,
 }: {
-  kind: 'mix' | 'fact' | 'none';
+  kind: 'mix' | 'fact' | 'answer' | 'none';
   closest?: string;
   /** Evidence ids the answer used, so suggestions point at work it did not. */
   cited: string[];

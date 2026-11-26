@@ -2,7 +2,7 @@ import { MAX_LAYERS } from './citations';
 import type { Message } from './prompt';
 
 /** Same shape the citations check expects; JSON mode asks the model to fill it. */
-const responseSchema = {
+export const layersSchema = {
   type: 'object',
   properties: {
     layers: {
@@ -22,13 +22,30 @@ const responseSchema = {
   required: ['layers'],
 };
 
+/** A behaviour answer: sentences, each with the evidence it rests on. */
+export const sentencesSchema = {
+  type: 'object',
+  properties: {
+    sentences: {
+      type: 'array',
+      maxItems: 4,
+      items: {
+        type: 'object',
+        properties: { text: { type: 'string' }, evidence_ids: { type: 'array', items: { type: 'string' } } },
+        required: ['text', 'evidence_ids'],
+      },
+    },
+  },
+  required: ['sentences'],
+};
+
 type AiRunner = { run: (model: string, input: Record<string, unknown>) => Promise<unknown> };
 
 /** One Workers AI call in JSON mode. Throws on any error so the caller can serve the house menu. */
-export async function callModel(ai: AiRunner, model: string, messages: Message[]): Promise<unknown> {
+export async function callModel(ai: AiRunner, model: string, messages: Message[], schema: object = layersSchema): Promise<unknown> {
   const out = (await ai.run(model, {
     messages,
-    response_format: { type: 'json_schema', json_schema: responseSchema },
+    response_format: { type: 'json_schema', json_schema: schema },
     max_tokens: 512,
     temperature: 0.2,
   })) as { response?: unknown; usage?: { prompt_tokens?: number; completion_tokens?: number } } | null;

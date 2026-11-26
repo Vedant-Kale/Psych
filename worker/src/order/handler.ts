@@ -10,11 +10,12 @@ import { bump } from '../db/outcomes';
 import { history, recordTurn } from '../db/turns';
 import type { Env } from '../index';
 import { readBodyLimited } from './body';
-import { enforceCitations } from './citations';
+import { enforceAnswer, enforceCitations } from './citations';
 import { answerFromProfile } from './facts';
 import { checkRate, DAILY_AI_CAP, ipKey, takeBudget, utcDay } from './limits';
 import { scoreFollowUp } from './followup';
-import { callModel } from './model';
+import { orderKind } from './kind';
+import { callModel, sentencesSchema } from './model';
 import { loadWeights, type Weights } from './weights';
 import { buildMessages } from './prompt';
 import { parseOrderRequest } from './request';
@@ -110,9 +111,13 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, co
 
   // 8 model (throws → house menu via the caller) · 9 citations · 10 nothing survived
   const past = conversationId ? await history(c.env.DB, conversationId) : [];
+  const chunkIds = chunks.map((k) => k.id);
+  if (orderKind(text) === 'behaviour') {
+    const said = enforceAnswer(await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks, past, 'behaviour'), sentencesSchema), chunks);
+    return said ? answer({ kind: 'answer', ...said }, chunkIds) : nothingSupports(c, text, now, (r) => answer(r, chunkIds), chunks[0]?.id);
+  }
   const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks, past));
   const layers = enforceCitations(raw, chunks);
-  const chunkIds = chunks.map((k) => k.id);
   if (layers.length === 0) return nothingSupports(c, text, now, (r) => answer(r, chunkIds), chunks[0]?.id);
   return answer({ kind: 'mix', layers }, chunkIds);
 }
