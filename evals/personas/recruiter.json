@@ -1,0 +1,12 @@
+{
+  "id": "recruiter",
+  "who": "A recruiter screening many candidates for a hiring manager.",
+  "tone": "Brisk and polite; asks short screening questions.",
+  "openers": [
+    "I'm screening candidates this week: {q}",
+    "Quick screening question: {q}",
+    "For my shortlist: {q}"
+  ],
+  "deeperPrefix": "Can you go a bit deeper: ",
+  "rewordPrefix": "Let me put it another way: "
+}

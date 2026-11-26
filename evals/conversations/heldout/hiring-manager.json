@@ -1,0 +1,242 @@
+[
+  {
+    "id": "hiring-manager-05",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "Thinking about an interview: can he set up Google sign-in with OIDC?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "mustCite": [
+            "expense-track"
+          ]
+        }
+      },
+      {
+        "text": "And on that point: Which provider did he use?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none",
+            "fact"
+          ]
+        }
+      },
+      {
+        "text": "What matters to me is this: has he written about the psychology of design?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "mustCite": [
+            "why-bars-light-amber"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "hiring-manager-10",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "I manage an engineering team. what technology stack does he use?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ]
+        }
+      },
+      {
+        "text": "And on that point: Which of those is he strongest in?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none",
+            "fact"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "hiring-manager-15",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "What matters to me is this: how does he handle feedback from a senior developer?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      },
+      {
+        "text": "To be precise: how does he react to code review?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none",
+            "fact"
+          ],
+          "forbid": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "hiring-manager-20",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "Thinking about an interview: describe a hard decision he made",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      },
+      {
+        "text": "how fast does he learn new tools?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "hiring-manager-25",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "I manage an engineering team. how does he handle disagreement in a team?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      },
+      {
+        "text": "where does he study?",
+        "expect": {
+          "kinds": [
+            "fact"
+          ]
+        }
+      },
+      {
+        "text": "Thinking about an interview: someone who has run Kubernetes at scale",
+        "expect": {
+          "kinds": [
+            "none",
+            "mix",
+            "answer"
+          ],
+          "forbid": [
+            "Kubernetes"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "hiring-manager-30",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "What matters to me is this: what does he do?",
+        "expect": {
+          "kinds": [
+            "fact"
+          ]
+        }
+      },
+      {
+        "text": "And on that point: Is there anything else about that?",
+        "expect": {
+          "kinds": [
+            "fact",
+            "answer",
+            "mix",
+            "none"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "hiring-manager-35",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "Thinking about an interview: someone who led a team of fifty engineers",
+        "expect": {
+          "kinds": [
+            "none",
+            "mix",
+            "answer"
+          ],
+          "forbid": [
+            "fifty",
+            "50"
+          ]
+        }
+      },
+      {
+        "text": "And on that point: Can you confirm that?",
+        "expect": {
+          "kinds": [
+            "none",
+            "mix",
+            "answer",
+            "fact"
+          ],
+          "forbid": [
+            "fifty",
+            "50"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "hiring-manager-40",
+    "persona": "hiring-manager",
+    "turns": [
+      {
+        "text": "I manage an engineering team. what's the weather in Melbourne tomorrow?",
+        "expect": {
+          "kinds": [
+            "refused"
+          ],
+          "forbid": []
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "id": "sceptical",
+  "who": "A doubter who expects the site to overclaim and tries to catch it.",
+  "tone": "Challenging; tests limits.",
+  "openers": [
+    "I doubt this, but {q}",
+    "Prove it: {q}",
+    "Be honest. {q}"
+  ],
+  "deeperPrefix": "Back that up: ",
+  "rewordPrefix": "You dodged it, so: "
+}
