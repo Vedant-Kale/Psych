@@ -28,7 +28,35 @@ const CLAIMS = [
   /\bfeedback\b/i,
   /\bcommunicat\w*/i,
   /\bcollaborat\w*/i,
+  // Credentials: only ever in the evidence's own words, never repeated from what a visitor claimed.
+  /\bph\.?d\b/i,
+  /\b(doctorate|doctoral|bachelor'?s?)\b/i,
 ];
+
+const escapeRe = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Names the visitor typed mid-sentence ("…says he studied at Stanford"). The owner's own name is allowed. */
+function namesInOrder(order: string): string[] {
+  const names = order
+    .split(/[.!?]\s+/)
+    .flatMap((sentence) => sentence.trim().split(/\s+/).slice(1)) // the first word of a sentence is capitalised anyway
+    .map((w) => w.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, ''))
+    .filter((w) => /^[A-Z][a-zA-Z]{3,}$/.test(w) && !/^(vedant|kale)$/i.test(w));
+  return [...new Set(names)];
+}
+
+/**
+ * No unstated numbers, no hedging, no people or business claim the cited text doesn't make itself, and no name the
+ * visitor supplied that the cited text doesn't contain: what a visitor writes is never evidence.
+ */
+function claimIsSupported(claim: string, source: string, order = ''): boolean {
+  const word = (w: string) => new RegExp(`\\b${escapeRe(w)}\\b`, 'i');
+  if (namesInOrder(order).some((n) => word(n).test(claim) && !word(n).test(source))) return false;
+  const supported = numbers(source);
+  if ([...numbers(claim)].some((n) => !supported.has(n))) return false;
+  if (HEDGE.test(claim)) return false;
+  return !CLAIMS.some((re) => re.test(claim) && !re.test(source));
+}
 
 /**
  * The guarantee behind The Order: a layer survives only if every evidence id is one we supplied,
@@ -36,7 +64,7 @@ const CLAIMS = [
  * claim (leadership, customers, feedback…) is stated by those chunks themselves.
  * Anything else the model wrote (including free-text notes) is dropped.
  */
-export function enforceCitations(raw: unknown, chunks: Chunk[]): Layer[] {
+export function enforceCitations(raw: unknown, chunks: Chunk[], order = ''): Layer[] {
   let value = raw;
   if (typeof value === 'string') {
     try {
@@ -57,15 +85,52 @@ export function enforceCitations(raw: unknown, chunks: Chunk[]): Layer[] {
     const cited = evidence_ids.map((id) => byId.get(id));
     if (cited.some((c) => c === undefined)) continue;
 
-    const source = cited.map((c) => c!.text).join('\n');
-    const claim = `${skill} ${rationale}`;
-    const supported = numbers(source);
-    if ([...numbers(claim)].some((n) => !supported.has(n))) continue;
-    if (HEDGE.test(claim)) continue;
-    if (CLAIMS.some((re) => re.test(claim) && !re.test(source))) continue;
+    if (!claimIsSupported(`${skill} ${rationale}`, cited.map((c) => c!.text).join('\n'), order)) continue;
 
     kept.push({ skill, evidenceIds: [...new Set(evidence_ids)], rationale });
     if (kept.length === MAX_LAYERS) break;
   }
   return kept;
+}
+
+export const MAX_ANSWER_WORDS = 80;
+const rawSentence = z.object({ text: z.string().trim().min(1).max(300), evidence_ids: z.array(z.string()).min(1) });
+// The answer is the owner speaking: a sentence about "he" or "Vedant" is the model narrating, so it is dropped.
+const THIRD_PERSON = /\b(he|his|him|himself|vedant|kale)\b/i;
+
+/**
+ * The same guarantee for a behaviour answer: each sentence must cite evidence we supplied and be supported by it,
+ * speak in the first person, and the whole answer stops at the last full sentence that fits in 80 words.
+ * Null when nothing survives, so the visitor gets an honest "no" instead of a stretch.
+ */
+export function enforceAnswer(raw: unknown, chunks: Chunk[], order = ''): { text: string; evidenceIds: string[] } | null {
+  let value = raw;
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  const top = z.object({ sentences: z.array(z.unknown()) }).safeParse(value);
+  if (!top.success) return null;
+
+  const byId = new Map(chunks.map((c) => [c.id, c]));
+  const kept: string[] = [];
+  const ids = new Set<string>();
+  let wordCount = 0;
+  for (const candidate of top.data.sentences) {
+    const parsed = rawSentence.safeParse(candidate);
+    if (!parsed.success) continue;
+    const { text, evidence_ids } = parsed.data;
+    const cited = evidence_ids.map((id) => byId.get(id));
+    if (cited.some((c) => c === undefined)) continue;
+    if (THIRD_PERSON.test(text) || !claimIsSupported(text, cited.map((c) => c!.text).join('\n'), order)) continue;
+    const n = text.split(/\s+/).length;
+    if (wordCount + n > MAX_ANSWER_WORDS) break;
+    wordCount += n;
+    kept.push(text);
+    evidence_ids.forEach((id) => ids.add(id));
+  }
+  return kept.length > 0 ? { text: kept.join(' '), evidenceIds: [...ids] } : null;
 }

@@ -13,6 +13,7 @@ const cases = JSON.parse(readFileSync(new URL('./order-cases.json', import.meta.
 function cited(r: Result): string[] {
   if (r.kind === 'mix') return (r as Extract<Result, { kind: 'mix' }>).layers.flatMap((l) => l.evidenceIds.map((id) => id.split('#')[0]!));
   if (r.kind === 'fact') return (r as Extract<Result, { kind: 'fact' }>).sourceIds;
+  if (r.kind === 'answer') return (r as unknown as { evidenceIds: string[] }).evidenceIds.map((id) => id.split('#')[0]!);
   return [];
 }
 

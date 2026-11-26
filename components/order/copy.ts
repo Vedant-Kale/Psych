@@ -5,6 +5,7 @@ import type { HouseMenuReason, RefusalReason } from '@/lib/order/types';
 export const resultHeading = {
   mix: 'Your mix',
   fact: 'From the facts',
+  answer: 'My answer',
   none: 'Nothing to pour yet',
   refused: "I can't make that one",
   'house-menu': 'From the house menu',

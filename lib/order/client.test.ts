@@ -11,6 +11,11 @@ describe('postOrder', () => {
     expect(await postOrder('an engineer', 't', ID, reply(200, mix))).toEqual(mix);
   });
 
+  it('returns an answer as is', async () => {
+    const answer = { kind: 'answer', text: 'I did it.', evidenceIds: ['a#0'] };
+    expect(await postOrder('how did he', 't', ID, reply(200, answer))).toEqual(answer);
+  });
+
   it('returns the house menu sent with 429', async () => {
     const menu = { kind: 'house-menu', reason: 'rate-limit', menu: { items: [] } };
     expect(await postOrder('an engineer', 't', ID, reply(429, menu))).toEqual(menu);

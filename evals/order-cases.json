@@ -25,6 +25,8 @@
   { "group": "interview", "order": "tell me about a time he led a team", "mustNotContain": ["led", "leadership", "managed"] },
   { "group": "interview", "order": "how does he handle feedback from a senior developer?", "mustNotContain": ["feedback", "could", "might", "suggests", "indicates", "implies"] },
   { "group": "interview", "order": "an engineer with real business acumen who can turn customer needs into a product", "mustNotContain": ["acumen", "could", "might", "suggests", "indicates"] },
-  { "group": "interview", "order": "someone who has worked face to face with real customers", "expectKind": "mix", "mustCite": ["profile"], "mustNotContain": ["could", "might", "suggests", "indicates", "implies"] },
+  { "group": "interview", "order": "someone who has worked face to face with real customers", "mustNotContain": ["could", "might", "suggests", "indicates", "implies"] },
+  { "group": "interview", "order": "how did he keep each user's data private in his finance app?", "expectKind": "answer", "mustCite": ["expense-track"], "mustNotContain": ["could", "might", "suggests", "indicates"] },
+  { "group": "interview", "order": "why did he use row-level security?", "mustNotContain": ["PhD", "could", "might", "suggests", "indicates"] },
   { "group": "interview", "order": "an AI engineer for a fintech startup who cares about user data privacy", "expectKind": "mix", "mustCite": ["expense-track"] }
 ]

@@ -137,7 +137,7 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
               {resultHeading[result.kind]}
             </h2>
             <Result result={result} sources={sources} profile={profile} ordered={ordered} onRetry={() => void submit()} canRetry={!!token && !pending} />
-            {turnId !== undefined && (result.kind === 'mix' || result.kind === 'fact' || result.kind === 'none') && (
+            {turnId !== undefined && (result.kind === 'mix' || result.kind === 'fact' || result.kind === 'answer' || result.kind === 'none') && (
               <Exits
                 key={turnId}
                 kind={result.kind}
@@ -190,6 +190,13 @@ function Result({
           <SourceLinks ids={result.sourceIds} sources={sources} />
         </>
       );
+    case 'answer':
+      return (
+        <>
+          <p className="lead">{result.text}</p>
+          <SourceLinks ids={result.evidenceIds} sources={sources} />
+        </>
+      );
     case 'none':
       return <p>{result.message}</p>;
     case 'refused':
@@ -222,8 +229,9 @@ function Result({
 }
 
 /** The evidence ids an answer used. */
-function citedIds(r: Extract<OrderResponse, { kind: 'mix' | 'fact' | 'none' }>): string[] {
+function citedIds(r: Extract<OrderResponse, { kind: 'mix' | 'fact' | 'answer' | 'none' }>): string[] {
   if (r.kind === 'mix') return r.layers.flatMap((l) => l.evidenceIds);
+  if (r.kind === 'answer') return r.evidenceIds;
   if (r.kind === 'fact') return r.sourceIds;
   return r.closest ? [r.closest] : [];
 }

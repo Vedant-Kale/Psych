@@ -6,6 +6,12 @@ describe('judge', () => {
     expect(judge({ group: 'g', order: 'o', expectKind: 'mix', mustCite: ['a'] }, { kind: 'mix', layers: [{ evidenceIds: ['a#0'] }] })).toEqual([]);
   });
 
+  it('reads the sources an answer cites', () => {
+    const answer = { kind: 'answer', text: 'I did it.', evidenceIds: ['expense-track#0'] };
+    expect(judge({ group: 'g', order: 'o', expectKind: 'answer', mustCite: ['expense-track'] }, answer)).toEqual([]);
+    expect(judge({ group: 'g', order: 'o', mustCite: ['other'] }, answer)).toEqual(['did not cite other']);
+  });
+
   it('fails a missing citation and a wrong kind', () => {
     expect(judge({ group: 'g', order: 'o', expectKind: 'mix', mustCite: ['a'] }, { kind: 'none', message: 'x' })).toEqual([
       'kind none, expected mix',

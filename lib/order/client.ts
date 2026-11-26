@@ -4,7 +4,7 @@ export type OrderError = 'verification' | 'network' | 'bad-request';
 export type OrderResponse = Answered | { kind: 'error'; reason: OrderError };
 export type SignalType = 'yes' | 'no' | 'opened-source' | 'receipt' | 'interview';
 
-const KINDS = new Set(['mix', 'fact', 'none', 'refused', 'house-menu']);
+const KINDS = new Set(['mix', 'fact', 'answer', 'none', 'refused', 'house-menu']);
 
 /** POSTs an order. Never throws: every failure becomes `{ kind: 'error', reason }`, so the UI can't hang on a spinner. */
 export async function postOrder(text: string, turnstileToken: string, conversationId: string, fetchFn: typeof fetch = fetch): Promise<OrderResponse> {
