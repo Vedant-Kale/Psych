@@ -27,7 +27,8 @@ export function loadPersonas(): Persona[] {
     .map((f) => JSON.parse(readFileSync(dir(`personas/${f}`), 'utf8')) as Persona);
 }
 
-export function loadConversations(set: 'train' | 'heldout' | 'all'): Conversation[] {
+export function loadConversations(set: 'train' | 'heldout' | 'all' | 'top30'): Conversation[] {
+  if (set === 'top30') return topQuestions();
   const sets = set === 'all' ? ['train', 'heldout'] : [set];
   return sets.flatMap((s) =>
     readdirSync(dir(`conversations/${s}`))
@@ -35,6 +36,16 @@ export function loadConversations(set: 'train' | 'heldout' | 'all'): Conversatio
       .sort()
       .flatMap((f) => JSON.parse(readFileSync(dir(`conversations/${s}/${f}`), 'utf8')) as Conversation[]),
   );
+}
+
+/** The 30 questions an interviewer is most likely to ask: each must get a documented answer or an honest redirect, never a refusal. */
+function topQuestions(): Conversation[] {
+  const questions = JSON.parse(readFileSync(dir('top-questions.json'), 'utf8')) as string[];
+  return questions.map((text, i) => ({
+    id: `top-${String(i + 1).padStart(2, '0')}`,
+    persona: 'hiring-manager',
+    turns: [{ text, expect: { kinds: ['answer', 'mix', 'fact', 'none'] } }],
+  }));
 }
 
 /** Every problem in the set, named by conversation id; empty when it is fit to run. */
@@ -107,7 +118,7 @@ export function buildSummary(rows: Row[], rephrase: number) {
 async function main() {
   const args = process.argv.slice(2);
   const flag = (name: string, fallback: string) => (args.includes(`--${name}`) ? args[args.indexOf(`--${name}`) + 1]! : fallback);
-  const set = flag('set', 'heldout') as 'train' | 'heldout' | 'all';
+  const set = flag('set', 'heldout') as 'train' | 'heldout' | 'all' | 'top30';
   const cap = Number(flag('max-model-turns', String(MAX_MODEL_TURNS)));
   const base = flag('url', process.env.EVAL_URL ?? 'http://localhost:8799').replace(/\/$/, '');
   const day = Number(flag('day', String(Math.floor(Date.now() / 86_400_000))));

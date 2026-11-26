@@ -83,3 +83,20 @@ Why Scout: standard `messages` + JSON schema + `seed`/`temperature`, mid cost, n
 ## 6. Live interview test (2026-11-25)
 
 Five interview-style orders on the live site (in Brave): 1 of 5 good. The model inferred traits the content never states ("led the development of an expense tracker"; "could indicate he values feedback"), and cited the only engineering source for everything, because the index held 2 chunks and the profile wasn't indexed. Response: AI off (#55), no-guessing checks (#56, evals 25/25), and the Order v2 plan (stories, answer shapes, exits, self-improvement trained before launch).
+
+## 7. Launch gates for The Order v2
+
+Status: **not run yet.** It needs the first stories (#60) and a private beta of 10–20 people on the staging URL. The AI stays off in production until every gate passes **and** the owner says yes.
+
+How to produce the report (each step prints JSON; `evals/gates.ts` reads the files):
+
+1. **Held-out runs.** `npm run simulate -- --set heldout` against a local Worker (the CI job does this on PRs that touch the Order). Each run is capped at 23 model turns and starts from a different place each day, so run it on several days and save each final JSON line (`sim1.json`, `sim2.json`, …) until the runs add up to the whole held-out set (about 85 turns).
+2. **Top 30.** `npm run simulate -- --set top30 --max-model-turns 30` once. This is the one run allowed to go past the usual cap: at most 30 × 84 = 2,520 Neurons worst case, about 540 typical. Save the JSON line as `top30.json`.
+3. **Beta outcomes.** `npx wrangler d1 execute psych-staging --remote --env staging --json --command "SELECT SUM(followups) AS followups, SUM(reworded) AS reworded FROM daily_outcomes WHERE day >= '<first beta day>'"`, and save the first row as `outcomes.json`.
+4. **Ratings** from the testers, out of 5, as a JSON array (`ratings.json`); **daily model calls** from `ai_budget` on staging as a JSON array (`calls.json`).
+5. `npm run gates -- --simulations sim1.json,sim2.json --top30 top30.json --outcomes outcomes.json --ratings ratings.json --calls calls.json`, and paste its report below.
+6. `npm run weights:export` writes the weights staging learned to `worker/weights/base.json`; review that diff in a PR before production starts from it.
+
+A gate with too little data (fewer than 80 held-out turns, 50 follow-ups, 10 ratings) reports `no-data` and blocks the launch.
+
+<!-- Paste the report here when it has been run. -->
