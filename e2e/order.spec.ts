@@ -71,7 +71,7 @@ test('mix and house menu link each source once, to its page', async ({ page }) =
 test('two quick clicks send exactly one order', async ({ page }) => {
   const calls = await api(page, 200, { kind: 'none', message: 'm' }, 400);
   await page.goto('/order/');
-  await page.getByLabel('Your order').fill('an engineer');
+  await page.getByLabel('Your order').fill('an engineer who knows security');
   const place = page.getByRole('button', { name: 'Place order' });
   await expect(place).toBeEnabled();
   await place.dblclick();
@@ -100,7 +100,7 @@ test('keyboard only: Tab to the order, type, Tab to Place order, Enter', async (
   await page.goto('/order/');
   await expect(page.getByRole('button', { name: 'Place order' })).toBeEnabled();
   await page.getByLabel('Your order').focus();
-  await page.keyboard.type('an engineer');
+  await page.keyboard.type('an engineer who knows security');
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Place order' })).toBeFocused();
   await page.keyboard.press('Enter');
@@ -199,7 +199,7 @@ test('every order in a tab carries the same conversation id, kept in sessionStor
     ids.push((r.request().postDataJSON() as { conversationId: string }).conversationId);
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ kind: 'none', message: 'Nothing yet.' }) });
   });
-  await order(page, 'first order here');
+  await order(page, 'first order about security');
   await expect(page.getByText('Nothing yet.')).toBeVisible();
   const place = page.getByRole('button', { name: 'Place order' });
   await expect(place).toBeEnabled();
@@ -325,4 +325,72 @@ test('a profile-only answer suggests the documented work, two at most', async ({
   await withSignals(page, { kind: 'fact', answer: 'Master of AI at RMIT.', sourceIds: ['profile'], turnId: 3 });
   await order(page);
   await expect(page.getByRole('button', { name: /^Tell me about / })).toHaveCount(2);
+});
+
+// ---- one clarifying question for a vague order ----
+
+/** Collects the text of every order sent. */
+async function sentOrders(page: Page) {
+  const texts: string[] = [];
+  await page.route('**/api/order', async (r) => {
+    texts.push((r.request().postDataJSON() as { text: string }).text);
+    await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ kind: 'none', message: 'Nothing yet.' }) });
+  });
+  return texts;
+}
+
+async function placeVague(page: Page, text = 'a developer') {
+  await page.goto('/order/');
+  await page.getByLabel('Your order').fill(text);
+  const place = page.getByRole('button', { name: 'Place order' });
+  await expect(place).toBeEnabled();
+  await place.click();
+}
+
+test('a vague order gets one question before anything is sent; a chip sends the combined order', async ({ page }) => {
+  const texts = await sentOrders(page);
+  await placeVague(page);
+  const group = page.getByRole('group', { name: 'What will they work on?' });
+  await expect(group).toBeVisible();
+  await expect(page.getByText('What will they work on?')).toBeFocused();
+  expect(texts).toEqual([]);
+  await group.getByRole('button', { name: 'internal tools' }).click();
+  await expect(page.getByText('Nothing yet.')).toBeVisible();
+  expect(texts).toEqual(['a developer, for internal tools']);
+  await expect(page.getByLabel('Your order')).toHaveValue('a developer, for internal tools');
+});
+
+test('"Send as typed" sends the order unchanged, and it is not asked about twice', async ({ page }) => {
+  const texts = await sentOrders(page);
+  await placeVague(page);
+  await page.getByRole('button', { name: 'Send as typed' }).click();
+  await expect(page.getByText('Nothing yet.')).toBeVisible();
+  expect(texts).toEqual(['a developer']);
+  await expect(page.getByRole('group', { name: 'What will they work on?' })).toHaveCount(0);
+});
+
+test('specific, fact and behaviour orders are sent at once, with no question', async ({ page }) => {
+  const texts = await sentOrders(page);
+  for (const text of ['an engineer who ships secure AI agents', 'where does he study?', 'how did he keep data private?']) {
+    await placeVague(page, text);
+    await expect(page.getByText('Nothing yet.')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'What will they work on?' })).toHaveCount(0);
+  }
+  expect(texts).toEqual(['an engineer who ships secure AI agents', 'where does he study?', 'how did he keep data private?']);
+});
+
+test('editing the order closes the question, and the question works by keyboard and passes axe', async ({ page }) => {
+  const texts = await sentOrders(page);
+  await placeVague(page);
+  await expect(page.getByRole('group', { name: 'What will they work on?' })).toBeVisible();
+  const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(violations).toEqual([]);
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'a product users touch' })).toBeFocused();
+  await page.getByLabel('Your order').fill('a developer who knows security');
+  await expect(page.getByRole('group', { name: 'What will they work on?' })).toHaveCount(0);
+  expect(texts).toEqual([]);
+  await page.getByRole('button', { name: 'Place order' }).click();
+  await expect.poll(() => texts.length).toBe(1);
+  expect(texts[0]).toBe('a developer who knows security');
 });

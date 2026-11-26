@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { Profile } from '@/lib/content/schema';
 import { postOrder, postSignal, type OrderResponse, type SignalType } from '@/lib/order/client';
+import { clarify, withChoice, type Clarification } from '@/lib/order/clarify';
 import { conversationId } from '@/lib/order/conversation';
 import { TURNSTILE_SITE_KEY } from '@/lib/site';
-import { errorCopy, houseMenuCopy, refusalCopy, resultHeading, turnstileBlocked } from './copy';
+import { clarifyCopy, errorCopy, houseMenuCopy, refusalCopy, resultHeading, turnstileBlocked } from './copy';
 import { Pour } from './Pour';
 import { Receipt } from './Receipt';
 import { Exits } from './Exits';
@@ -28,11 +29,18 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
   const resultBox = useRef<HTMLElement>(null);
   const box = useRef<HTMLTextAreaElement>(null);
   const sent = useRef(new Set<string>()); // one signal of each type per answer, however often it is clicked
-  const ids = { hint: useId(), count: useId(), status: useId() };
+  const [clarifying, setClarifying] = useState<Clarification | null>(null);
+  const asked = useRef(''); // the order we already asked about: one question per order, whatever the answer
+  const question = useRef<HTMLParagraphElement>(null);
+  const ids = { hint: useId(), count: useId(), status: useId(), clarify: useId() };
 
   useEffect(() => {
     if (result) heading.current?.focus();
   }, [result]);
+
+  useEffect(() => {
+    if (clarifying) question.current?.focus();
+  }, [clarifying]);
 
   const turnId = result && 'turnId' in result ? result.turnId : undefined;
   const signal = useCallback(
@@ -58,13 +66,22 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
     return () => box.removeEventListener('click', onClick);
   }, [signal, sources]);
 
-  const submit = async () => {
+  /** `override`: the order to send as it is (a chosen option, or "send as typed"), skipping the clarifying question. */
+  const submit = async (override?: string) => {
     if (inFlight.current || !token) return;
+    const order = (override ?? text).trim();
+    const vague = override === undefined && asked.current !== order ? clarify(order) : null;
+    if (vague) {
+      asked.current = order;
+      setClarifying(vague);
+      return; // the human check is not used up: the visitor answers, then the order goes
+    }
+    asked.current = order;
+    setClarifying(null);
     inFlight.current = true;
     setPending(true);
-    const sent = text.trim();
-    const r = await postOrder(sent, token, conversationId());
-    setOrdered(sent);
+    const r = await postOrder(order, token, conversationId());
+    setOrdered(order);
     setToken('');
     setResetKey((k) => k + 1);
     setResult(r);
@@ -98,7 +115,10 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
           maxLength={MAX}
           required
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            setClarifying(null);
+          }}
           aria-describedby={`${ids.hint} ${ids.count}`}
         />
         <p id={ids.count} className="meta order-count">
@@ -117,6 +137,33 @@ export function Order({ sources, profile }: { sources: Sources; profile: Profile
           <p className="order-note" role="alert">
             {turnstileBlocked} Everything is also on the <Link href="/facts/">facts page</Link>.
           </p>
+        )}
+        {clarifying && (
+          <div role="group" aria-labelledby={ids.clarify} className="order-clarify">
+            <p id={ids.clarify} ref={question} tabIndex={-1} className="exits-question">
+              {clarifying.question}
+            </p>
+            <ul className="exits-chips">
+              {clarifying.options.map((option) => (
+                <li key={option}>
+                  <button
+                    type="button"
+                    className="order-button"
+                    onClick={() => {
+                      const combined = withChoice(text, option);
+                      setText(combined);
+                      void submit(combined);
+                    }}
+                  >
+                    {option}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="order-button" onClick={() => void submit(text)}>
+              {clarifyCopy.skip}
+            </button>
+          </div>
         )}
         <div className="order-actions">
           <button type="submit" className="order-button" disabled={pending || !token || checkFailed} aria-describedby={status ? ids.status : undefined}>
