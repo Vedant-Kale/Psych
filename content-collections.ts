@@ -8,6 +8,7 @@ import {
   profileSchema,
   projectSchema,
   roadmapSchema,
+  storyHeadingsMissing,
   withTrailRule,
 } from './lib/content/schema';
 
@@ -26,6 +27,8 @@ const posts = defineCollection({
   schema: withTrailRule(postFields.extend({ content: z.string() })),
   transform: async (doc, ctx) => {
     assertSlugMatchesFile(doc.slug, doc._meta, 'content/posts');
+    const missing = doc.type === 'story' ? storyHeadingsMissing(doc.content) : [];
+    if (missing.length > 0) throw new Error(`content/posts/${doc._meta.filePath}: a story needs the headings ${missing.map((h) => `'## ${h}'`).join(', ')}`);
     return { ...doc, html: await compileMarkdown(ctx, doc) };
   },
 });

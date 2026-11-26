@@ -3,7 +3,7 @@ import MiniSearch from 'minisearch';
 import { describe, expect, it } from 'vitest';
 import { searchOptions, type Chunk } from '../lib/search/types.ts';
 import type { Profile } from '../lib/content/schema.ts';
-import { buildSearchIndex, chunkDocument, profileChunks, toPlainText } from './build-search-index.ts';
+import { buildSearchIndex, chunkDocument, postBody, profileChunks, toPlainText } from './build-search-index.ts';
 
 const para = (n: number, word = 'word') => Array.from({ length: n }, () => word).join(' ');
 
@@ -77,6 +77,21 @@ describe('profileChunks', () => {
   it('a search for customer-facing work finds a role chunk', () => {
     const index = MiniSearch.loadJSON<Chunk>(buildSearchIndex(profileChunks(profile)), searchOptions);
     expect(index.search('bartending hospitality')[0]?.id).toBe('profile#0');
+  });
+});
+
+describe('postBody', () => {
+  const post = { summary: 'A summary.', content: 'The body.' };
+
+  it('is the summary then the body for an ordinary post', () => {
+    expect(postBody(post)).toBe('A summary.\n\nThe body.');
+  });
+
+  it("puts a story's themes in the text, so a question about leadership can find it", () => {
+    const body = postBody({ ...post, themes: ['leadership', 'pressure'] });
+    expect(body).toBe('Themes: leadership, pressure.\n\nA summary.\n\nThe body.');
+    const index = MiniSearch.loadJSON<Chunk>(buildSearchIndex(chunkDocument('captaincy', 'Captaincy', toPlainText(body))), searchOptions);
+    expect(index.search('pressure')[0]?.id).toBe('captaincy#0');
   });
 });
 

@@ -16,6 +16,11 @@ export function toPlainText(md: string): string {
     .trim();
 }
 
+/** A post's searchable text; a story's themes lead it, so "tell me about leadership" can find the story. */
+export function postBody(p: { summary: string; content: string; themes?: readonly string[] | undefined }): string {
+  return `${p.themes?.length ? `Themes: ${p.themes.join(', ')}.\n\n` : ''}${p.summary}\n\n${p.content}`;
+}
+
 /** Splits text into pieces of at most `max` chars, breaking only at spaces. */
 function splitLong(text: string, max: number): string[] {
   const out: string[] = [];
@@ -81,7 +86,7 @@ async function main() {
   const { allPosts, allProjects, allProfiles, allHouseMenus } = await import('../.content-collections/generated/index.js');
   const docs = [
     ...allProjects.map((p) => ({ slug: p.slug, title: p.title, body: `${p.summary}\n\n${p.content}` })),
-    ...allPosts.map((p) => ({ slug: p.slug, title: p.title, body: `${p.summary}\n\n${p.content}` })),
+    ...allPosts.map((p) => ({ slug: p.slug, title: p.title, body: postBody(p) })),
   ];
   const [profile] = allProfiles;
   const [houseMenu] = allHouseMenus;
