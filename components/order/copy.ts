@@ -47,5 +47,7 @@ export const exitCopy = {
   askNext: 'Ask next',
 } as const;
 
+export const clarifyCopy = { skip: 'Send as typed' } as const;
+
 export const turnstileBlocked =
   "The human check couldn't load, so orders can't go through. An ad blocker may be stopping it.";

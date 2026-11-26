@@ -1,4 +1,4 @@
-import type { Profile } from '../../../lib/content/schema';
+import type { Profile } from '../content/schema';
 
 type Fact = { answer: string; sourceIds: string[] };
 

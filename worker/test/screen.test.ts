@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Profile } from '../../lib/content/schema';
-import { answerFromProfile } from '../src/order/facts';
+import { answerFromProfile } from '../../lib/order/facts';
 import { parseOrderRequest } from '../src/order/request';
 import { screenInput } from '../src/order/screen';
 

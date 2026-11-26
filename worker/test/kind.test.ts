@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Chunk } from '../../lib/search/types';
 import worker from '../src/index';
 import { enforceAnswer, enforceCitations, MAX_ANSWER_WORDS } from '../src/order/citations';
-import { orderKind } from '../src/order/kind';
+import { orderKind } from '../../lib/order/kind';
 import { BEHAVIOUR_PROMPT, buildMessages, HISTORY_RULE, SYSTEM_PROMPT } from '../src/order/prompt';
 
 describe('orderKind', () => {
