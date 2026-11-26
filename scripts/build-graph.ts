@@ -19,6 +19,7 @@ const WEIGHT: Record<PostType | 'project' | 'domain', number> = {
   spark: 1,
   learning: 1,
   trail: 2,
+  story: 2,
   'deep-dive': 3,
   project: 4,
   domain: 5,

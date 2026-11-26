@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { allPosts, postBySlug } from '@/lib/content';
-import { domainLabel, postTypeLabel, stageLabel } from '@/lib/content/labels';
+import { domainLabel, postTypeLabel, stageLabel, storyThemeLabel } from '@/lib/content/labels';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -31,6 +31,9 @@ export default async function PostPage({ params }: Props) {
             {post.confidence && <> · <span>Confidence: {post.confidence}</span></>}
           </p>
           <h1>{post.title}</h1>
+          {post.themes && post.themes.length > 0 && (
+            <p className="meta">Answers questions about: {post.themes.map((t) => storyThemeLabel[t]).join(', ')}</p>
+          )}
           <p className="meta">
             <time dateTime={post.date}>{post.date}</time>
           </p>

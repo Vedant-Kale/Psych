@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 export const domains = ['ai-agents', 'finance', 'geospatial', 'psychology', 'business'] as const;
-export const postTypes = ['spark', 'deep-dive', 'trail', 'learning'] as const;
+export const postTypes = ['spark', 'deep-dive', 'trail', 'learning', 'story'] as const;
+/** What an interviewer might ask about; a story must say which it answers. */
+export const storyThemes = ['leadership', 'feedback', 'customers', 'pressure', 'teamwork', 'mistake', 'decision', 'learning'] as const;
 export const stages = ['seedling', 'budding', 'evergreen'] as const;
 export const projectStatuses = ['live', 'building', 'planned'] as const;
 
@@ -9,6 +11,7 @@ export const domainSchema = z.enum(domains);
 export type Domain = z.infer<typeof domainSchema>;
 export type PostType = (typeof postTypes)[number];
 export type Stage = (typeof stages)[number];
+export type StoryTheme = (typeof storyThemes)[number];
 export type ProjectStatus = (typeof projectStatuses)[number];
 
 export const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be kebab-case');
@@ -26,14 +29,28 @@ export const postFields = z.object({
   links: z.array(slugSchema).default([]),
   confidence: z.enum(['low', 'medium', 'high']).optional(),
   project: slugSchema.optional(),
+  themes: z.array(z.enum(storyThemes)).optional(),
+  // Never allowed on a post: a story may name a teammate or manager, and must not carry their contact details.
+  email: z.never().optional(),
+  phone: z.never().optional(),
 });
 
 /** Adds the cross-field rule; reused by the content loader after it extends the fields with `content`. */
-export const withTrailRule = <T extends z.ZodType<{ type: PostType; project?: string | undefined }>>(schema: T) =>
-  schema.refine((p) => p.type !== 'trail' || p.project !== undefined, {
-    message: 'trail posts must name their project',
-    path: ['project'],
-  });
+export const withTrailRule = <T extends z.ZodType<{ type: PostType; project?: string | undefined; themes?: readonly string[] | undefined }>>(schema: T) =>
+  schema
+    .refine((p) => p.type !== 'trail' || p.project !== undefined, {
+      message: 'trail posts must name their project',
+      path: ['project'],
+    })
+    .refine((p) => p.type !== 'story' || (p.themes?.length ?? 0) > 0, {
+      message: 'stories must name at least one theme',
+      path: ['themes'],
+    });
+
+/** A story is told as situation, action, result; returns the headings its body lacks. */
+export function storyHeadingsMissing(markdown: string): string[] {
+  return ['Situation', 'Action', 'Result'].filter((h) => !new RegExp(`^## ${h}\\s*$`, 'im').test(markdown));
+}
 
 export const postSchema = withTrailRule(postFields);
 export type Post = z.infer<typeof postSchema>;
