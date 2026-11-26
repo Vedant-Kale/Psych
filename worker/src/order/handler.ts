@@ -113,11 +113,11 @@ async function serve(c: Context<{ Bindings: Env }>, text: string, ip: string, co
   const past = conversationId ? await history(c.env.DB, conversationId) : [];
   const chunkIds = chunks.map((k) => k.id);
   if (orderKind(text) === 'behaviour') {
-    const said = enforceAnswer(await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks, past, 'behaviour'), sentencesSchema), chunks);
+    const said = enforceAnswer(await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks, past, 'behaviour'), sentencesSchema), chunks, text);
     return said ? answer({ kind: 'answer', ...said }, chunkIds) : nothingSupports(c, text, now, (r) => answer(r, chunkIds), chunks[0]?.id);
   }
   const raw = await callModel(c.env.AI, c.env.ORDER_MODEL, buildMessages(text, chunks, past));
-  const layers = enforceCitations(raw, chunks);
+  const layers = enforceCitations(raw, chunks, text);
   if (layers.length === 0) return nothingSupports(c, text, now, (r) => answer(r, chunkIds), chunks[0]?.id);
   return answer({ kind: 'mix', layers }, chunkIds);
 }
