@@ -18,6 +18,7 @@
     "evals": "node evals/run.ts",
     "simulate": "node evals/simulate.ts",
     "simulate:dry": "node evals/simulate.ts --dry-run --set all",
+    "gates": "node evals/gates.ts",
     "gaps:raw": "node scripts/gap-report.ts raw",
     "weights:export": "node scripts/export-weights.ts"
   },
