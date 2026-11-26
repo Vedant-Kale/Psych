@@ -1,0 +1,12 @@
+{
+  "id": "reference",
+  "who": "Someone who may be asked to vouch for him, checking what is claimed.",
+  "tone": "Careful and fact-checking.",
+  "openers": [
+    "I want to check something. {q}",
+    "Before I say anything about him: {q}",
+    "Just so I describe him accurately: {q}"
+  ],
+  "deeperPrefix": "Is there more detail on this: ",
+  "rewordPrefix": "Asking again in other words: "
+}

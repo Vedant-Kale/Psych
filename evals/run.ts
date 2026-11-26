@@ -18,7 +18,7 @@ function cited(r: Result): string[] {
 }
 
 /** Whole-word, case-insensitive: "MIT" must not match "limit". */
-const containsWord = (haystack: string, needle: string) =>
+export const containsWord = (haystack: string, needle: string) =>
   new RegExp(`(^|[^\\p{L}\\p{N}])${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}\\p{N}])`, 'iu').test(haystack);
 
 export function judge(c: Case, r: Result): string[] {

@@ -1,0 +1,247 @@
+[
+  {
+    "id": "in-a-hurry-04",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "Quick: how does he test a finance app?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "mustCite": [
+            "expense-track"
+          ]
+        }
+      },
+      {
+        "text": "More: How many tests are there?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none",
+            "fact"
+          ]
+        }
+      },
+      {
+        "text": "Short answer please. what does he know about warm lighting in bars?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "mustCite": [
+            "why-bars-light-amber"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "in-a-hurry-09",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "does he know Postgres?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "mustCite": [
+            "expense-track"
+          ]
+        }
+      },
+      {
+        "text": "what technology stack does he use?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "in-a-hurry-14",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "Short answer please. tell me about a time he led a team",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      },
+      {
+        "text": "how does he handle feedback from a senior developer?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "in-a-hurry-19",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "Quick: what mistake taught him the most?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      },
+      {
+        "text": "More: What did he change afterwards?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none",
+            "fact"
+          ],
+          "forbid": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "in-a-hurry-24",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "has he mentored anyone?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none"
+          ],
+          "forbid": []
+        }
+      },
+      {
+        "text": "More: How did it go?",
+        "expect": {
+          "kinds": [
+            "answer",
+            "mix",
+            "none",
+            "fact"
+          ],
+          "forbid": []
+        }
+      },
+      {
+        "text": "Quick: an engineer with a PhD in computer vision",
+        "expect": {
+          "kinds": [
+            "none",
+            "mix",
+            "answer"
+          ],
+          "forbid": [
+            "PhD",
+            "doctorate"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "in-a-hurry-29",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "Short answer please. what degree is he doing?",
+        "expect": {
+          "kinds": [
+            "fact"
+          ]
+        }
+      },
+      {
+        "text": "More: Is there anything else about that?",
+        "expect": {
+          "kinds": [
+            "fact",
+            "answer",
+            "mix",
+            "none"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "in-a-hurry-34",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "Quick: did he work at Atlassian?",
+        "expect": {
+          "kinds": [
+            "none",
+            "mix",
+            "answer"
+          ],
+          "forbid": [
+            "Atlassian"
+          ]
+        }
+      },
+      {
+        "text": "someone who led a team of fifty engineers",
+        "expect": {
+          "kinds": [
+            "none",
+            "mix",
+            "answer"
+          ],
+          "forbid": [
+            "fifty",
+            "50"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "in-a-hurry-39",
+    "persona": "in-a-hurry",
+    "turns": [
+      {
+        "text": "write me a poem about cats",
+        "expect": {
+          "kinds": [
+            "refused"
+          ],
+          "forbid": []
+        }
+      }
+    ]
+  }
+]

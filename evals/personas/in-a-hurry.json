@@ -1,0 +1,12 @@
+{
+  "id": "in-a-hurry",
+  "who": "Someone with two minutes who wants the answer first.",
+  "tone": "Terse; no pleasantries.",
+  "openers": [
+    "Quick: {q}",
+    "Short answer please. {q}",
+    "{q}"
+  ],
+  "deeperPrefix": "More: ",
+  "rewordPrefix": "Again: "
+}

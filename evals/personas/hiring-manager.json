@@ -1,0 +1,12 @@
+{
+  "id": "hiring-manager",
+  "who": "An engineering manager deciding whether to interview.",
+  "tone": "Specific and probing; wants evidence, not adjectives.",
+  "openers": [
+    "I manage an engineering team. {q}",
+    "Thinking about an interview: {q}",
+    "What matters to me is this: {q}"
+  ],
+  "deeperPrefix": "And on that point: ",
+  "rewordPrefix": "To be precise: "
+}

@@ -1,6 +1,7 @@
 name: Evals
 
-# Real Workers AI calls cost Neurons, so: weekly, on release tags, on demand, and only on PRs that change the evals.
+# Real Workers AI calls cost Neurons, so: weekly, on release tags, on demand, and only on PRs that change the evals
+# or the Order's own code.
 on:
   schedule:
     - cron: '0 21 * * 0'
@@ -8,7 +9,7 @@ on:
     tags: ['v*']
   workflow_dispatch:
   pull_request:
-    paths: ['evals/**', '.github/workflows/evals.yml']
+    paths: ['evals/**', '.github/workflows/evals.yml', 'worker/src/order/**', 'lib/order/**']
 
 permissions:
   contents: read
@@ -45,6 +46,10 @@ jobs:
             --var IP_SALT_SECRET:ci-eval-salt > wrangler-dev.log 2>&1 &
           curl -sf --retry 60 --retry-connrefused --retry-delay 1 http://localhost:8799/api/health
       - run: npm run evals
+      # The held-out conversations, capped at 23 model turns (23 × 84 Neurons = 1,932 at the worst case) and rotated by day,
+      # because a local run is not counted by AI_DAILY_CAP. Any over-claim fails the job.
+      - name: Simulate the held-out conversations
+        run: npm run simulate -- --set heldout
       - name: Neuron usage this run
         if: always()
         run: |

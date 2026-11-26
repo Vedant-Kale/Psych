@@ -16,6 +16,8 @@
     "verify": "npm run lint && npm run build && npm run test && npm run typecheck && npm run e2e",
     "deploy": "wrangler deploy",
     "evals": "node evals/run.ts",
+    "simulate": "node evals/simulate.ts",
+    "simulate:dry": "node evals/simulate.ts --dry-run --set all",
     "gaps:raw": "node scripts/gap-report.ts raw",
     "weights:export": "node scripts/export-weights.ts"
   },
